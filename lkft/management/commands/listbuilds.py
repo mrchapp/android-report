@@ -15,17 +15,11 @@ import yaml
 
 from django.core.management.base import BaseCommand, CommandError
 
-from django.utils.timesince import timesince
-
-from lkft.models import KernelChange, CiBuild, ReportBuild, ReportProject, ReportJob
-
 from lcr import qa_report
-from lkft import lkft_config
-from lcr.irc import IRC
 
 from lcr.settings import QA_REPORT, QA_REPORT_DEFAULT
 
-from lkft.views import get_kernel_changes_info, get_build_info
+from lkft.views import get_build_info
 
 logger = logging.getLogger(__name__)
 

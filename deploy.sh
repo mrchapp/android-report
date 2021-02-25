@@ -80,12 +80,14 @@ mkdir -p datafiles/logfiles/
 sudo chown -R :www-data datafiles
 sudo chmod 775 datafiles
 sudo chmod 775 datafiles/logfiles
-sudo chmod 664 datafiles/logfiles/*
-sudo chown ${USER}: datafiles/logfiles/*
+if [ -n "$(ls -A datafiles/logfiles)" ]; then
+    sudo chmod 664 datafiles/logfiles/*
+    sudo chown ${USER}: datafiles/logfiles/*
+fi
 rm -fr datafiles/db.sqlite3
 python3 manage.py migrate
 # for apache admin display
-python3 manage.py collectstatic
+python3 manage.py collectstatic || true
 python3 manage.py createsuperuser
 echo "Please access the site via http://127.0.0.1:8000/lkft"
 echo "And you still need to update the bugzilla, qa-report tokens to resubmit job or create bugs"
