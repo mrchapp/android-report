@@ -239,6 +239,7 @@ class Command(BaseCommand):
                     report_build.started_at = trigger_build.get('start_timestamp')
                     report_build.fetched_at = qareport_build.get('last_fetched_timestamp')
                     report_build.qa_build_id = qareport_build.get('id')
+                    # JOBSNOTSUBMITTED / JOBSINPROGRESS / JOBSCOMPLETED set in get_lkft_build_status
                     report_build.status = qareport_build.get('build_status')
                     report_build.save()
                 except ReportBuild.DoesNotExist:
@@ -316,7 +317,6 @@ class Command(BaseCommand):
                         report_job.report_build = report_build
                         report_job.parent_job = job.get('parent_job')
 
-                        # JOBSNOTSUBMITTED / JOBSINPROGRESS / JOBSCOMPLETED
                         report_job.status = job.get('job_status')
 
                         report_job.failure_msg = failure_msg

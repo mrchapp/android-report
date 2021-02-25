@@ -39,7 +39,7 @@ from lkft.lkft_config import find_expect_cibuilds
 from lkft.lkft_config import get_qa_server_project, get_supported_branches
 from lkft.lkft_config import is_benchmark_job, get_benchmark_testsuites, get_expected_benchmarks
 
-from .models import KernelChange, CiBuild, ReportBuild, ReportProject, ReportJob, TestCase
+from .models import KernelChange, CiBuild, ReportBuild, ReportProject, ReportJob, TestSuite, TestCase
 
 qa_report_def = QA_REPORT[QA_REPORT_DEFAULT]
 qa_report_api = qa_report.QAReportApi(qa_report_def.get('domain'), qa_report_def.get('token'))
@@ -161,22 +161,23 @@ def download_attachments_save_result(jobs=[]):
     for job in jobs:
         if not job.get('lava_config'):
             continue
+
+        try:
+            report_job = ReportJob.objects.get(job_url=job.get('external_url'))
+            if report_job.results_cached:
+                continue
+        except ReportJob.DoesNotExist:
+            report_job = ReportJob.objects.create(job_url=job.get('external_url'),
+                                job_name=job.get('name'),
+                                attachment_url=job.get('attachment_url'),
+                                qa_job_id=job.get('id'),
+                                parent_job= job.get('parent_job'),
+                                status=job.get('job_status'),
+                                )
+
         if is_benchmark_job(job.get('name')):
             if job.get('job_status') != 'Complete':
                 continue
-
-            try:
-                report_job = ReportJob.objects.get(job_url=job.get('external_url'))
-                if report_job.results_cached:
-                    continue
-            except ReportJob.DoesNotExist:
-                report_job = ReportJob.objects.create(job_url=job.get('external_url'),
-                                    job_name=job.get('name'),
-                                    attachment_url=job.get('attachment_url'),
-                                    qa_job_id=job.get('id'),
-                                    parent_job= job.get('parent_job'),
-                                    status=job.get('job_status'),
-                                    )
 
             # for benchmark jobs
             lava_config = job.get('lava_config')
@@ -194,31 +195,16 @@ def download_attachments_save_result(jobs=[]):
                     test["measurement"] = None
                 else:
                     test["measurement"] = "{:.2f}".format(float(test.get("measurement")))
-                need_cache = False
-                try:
-                    # not set again if already cached
-                    TestCase.objects.get(name=test.get("name"),
-                                         suite=test.get("suite"),
-                                         lava_nick=lava_config.get('nick'),
-                                         job_id=job_id)
-                except TestCase.DoesNotExist:
-                    need_cache = True
-                except TestCase.MultipleObjectsReturned:
-                    TestCase.objects.filter(name=test.get("name"),
-                                            suite=test.get("suite"),
-                                            lava_nick=lava_config.get('nick'),
-                                            job_id=job_id).delete()
-                    need_cache = True
 
-                if need_cache:
-                    TestCase.objects.create(name=test.get("name"),
+                TestCase.objects.filter(lava_nick=lava_config.get('nick'),
+                                            job_id=job_id).delete()
+                TestCase.objects.create(name=test.get("name"),
                                             result=test.get("result"),
                                             measurement=test.get("measurement"),
                                             unit=test.get("unit"),
                                             suite=test.get("suite"),
                                             lava_nick=lava_config.get('nick'),
                                             job_id=job_id)
-
 
             report_job.results_cached = True
             report_job.save()
@@ -231,30 +217,36 @@ def download_attachments_save_result(jobs=[]):
             if not result_file_path:
                 logger.info("Skip to get the attachment as the result_file_path is not found: %s %s" % (job_url, job.get('url')))
                 continue
+
+            if job.get('job_status') != 'Complete':
+                logger.info("Skip to get the attachment as the job is not Complete: %s %s" % (job_url, job.get('name')))
+                continue
+
+            attachment_url = job.get('attachment_url')
+            if not attachment_url:
+                logger.info("No attachment for job: %s %s" % (job_url, job.get('name')))
+                continue
+
             if not os.path.exists(result_file_path):
-                if job.get('job_status') != 'Complete':
-                    logger.info("Skip to get the attachment as the job is not Complete: %s %s" % (job_url, job.get('name')))
-                    continue
-
-                attachment_url = job.get('attachment_url')
-                if not attachment_url:
-                    logger.info("No attachment for job: %s %s" % (job_url, job.get('name')))
-                    continue
-
                 (temp_fd, temp_path) = tempfile.mkstemp(suffix='.tar.xz', text=False)
                 logger.info("Start downloading result file for job %s %s: %s" % (job_url, job.get('name'), temp_path))
                 ret_err = download_urllib(attachment_url, temp_path)
                 if ret_err:
                     logger.info("There is a problem with the size of the file: %s" % attachment_url)
                     continue
-                else:
-                    tar_f = temp_path.replace(".xz", '')
-                    ret = os.system("xz -d %s" % temp_path)
-                    if ret == 0 :
-                        extract_save_result(tar_f, result_file_path)
-                        os.unlink(tar_f)
-                    else:
-                        logger.info("Failed to decompress %s with xz -d command for job: %s " % (temp_path, job_url))
+
+                tar_f = temp_path.replace(".xz", '')
+                ret = os.system("xz -d %s" % temp_path)
+                if ret != 0 :
+                    logger.info("Failed to decompress %s with xz -d command for job: %s " % (temp_path, job_url))
+                    continue
+
+                extract_save_result(tar_f, result_file_path)
+                os.unlink(tar_f)
+
+            logger.info("Before call save_tradeded_results_to_database: %s %s" % (job_url, job.get('name')))
+            save_tradeded_results_to_database(result_file_path, job, report_job)
+            logger.info("After call save_tradeded_results_to_database: %s %s" % (job_url, job.get('name')))
 
 
 def remove_xml_unsupport_character(etree_content=""):
@@ -288,21 +280,13 @@ def remove_xml_unsupport_character(etree_content=""):
     return etree_content
 
 
-def extract(result_zip_path, failed_testcases_all={}, metadata={}):
-    kernel_version = metadata.get('kernel_version')
-    platform = metadata.get('platform')
-    qa_job_id = metadata.get('qa_job_id')
-    number_total = 0
-    number_passed = 0
-    number_failed = 0
-    number_assumption_failure = 0
-    number_ignored = 0
-    modules_done = 0
-    modules_total = 0
+def save_tradeded_results_to_database(result_file_path, job, report_job):
+    lava_config = job.get('lava_config')
+    job_id = job.get('job_id')
+    TestCase.objects.filter(lava_nick=lava_config.get('nick'), job_id=job_id).delete()
+    TestSuite.objects.filter(report_job=report_job).delete()
 
-    # no affect for cts result and non vts-hal test result
-    vts_abi_suffix_pat = re.compile(r"_32bit$|_64bit$")
-    with zipfile.ZipFile(result_zip_path, 'r') as f_zip_fd:
+    with zipfile.ZipFile(result_file_path, 'r') as f_zip_fd:
         try:
             # https://docs.python.org/3/library/xml.etree.elementtree.html
             root = ET.fromstring(remove_xml_unsupport_character(f_zip_fd.read(TEST_RESULT_XML_NAME).decode('utf-8')))
@@ -318,74 +302,144 @@ def extract(result_zip_path, failed_testcases_all={}, metadata={}):
             modules_done = int(summary_node.attrib['modules_done'])
             modules_total = int(summary_node.attrib['modules_total'])
 
+            testcase_objs = []
             for elem in root.findall('Module'):
                 abi = elem.attrib['abi']
                 module_name = elem.attrib['name']
+                done = elem.attrib['done']
+                module_number_pass = elem.attrib['pass']
+                module_number_total = elem.get('total_tests', 0)
+                if module_number_total == 0:
+                    module_number_total = len(elem.findall('.//Test'))
 
-                failed_tests_module = failed_testcases_all.get(module_name)
-                if not failed_tests_module:
-                    failed_tests_module = {}
-                    failed_testcases_all[module_name] = failed_tests_module
+                test_module = TestSuite.objects.create(report_job=report_job,
+                                            name=module_name,
+                                            done=(done == "true"),
+                                            abi=abi,
+                                            number_pass=int(module_number_pass),
+                                            number_total=int(module_number_total))
 
                 # test classes
-                test_cases = elem.findall('.//TestCase')
-                for test_case in test_cases:
-                    failed_tests = test_case.findall('.//Test[@result="fail"]')
-                    assumption_failures = test_case.findall('.//Test[@result="ASSUMPTION_FAILURE"]')
-                    for failed_test in failed_tests + assumption_failures:
-                        #test_name = '%s#%s' % (test_case.get("name"), vts_abi_suffix_pat.sub('', failed_test.get("name")))
-                        mod_name = test_case.get("name")
-                        test_result = failed_test.get('result')
-                        test_name = failed_test.get("name")
+                test_class_nodes = elem.findall('.//TestCase')
+                for test_class_node in test_class_nodes:
+                    test_class_name = test_class_node.get('name')
+                    test_case_nodes = test_class_node.findall('.//Test')
+                    for test_case in test_case_nodes:
+                        test_name = test_case.get("name")
                         if test_name.endswith('_64bit') or test_name.endswith('_32bit'):
-                            test_name = '%s#%s' % (mod_name, test_name)
-                        else: 
-                            test_name = '%s#%s#%s' % (mod_name, test_name, abi)
-                        message = failed_test.find('.//Failure').attrib.get('message')
-                        stacktrace = failed_test.find('.//Failure/StackTrace').text
-                        ## ignore duplicate cases as the jobs are for different modules
-                        failed_testcase = failed_tests_module.get(test_name)
-                        if failed_testcase:
-                            if failed_testcase.get('abi_stacktrace').get(abi) is None:
-                                failed_testcase.get('abi_stacktrace')[abi] = stacktrace
-
-                            if not qa_job_id in failed_testcase.get('qa_job_ids'):
-                                failed_testcase.get('qa_job_ids').append(qa_job_id)
-
-                            if not kernel_version in failed_testcase.get('kernel_versions'):
-                                failed_testcase.get('kernel_versions').append(kernel_version)
-
-                            if not platform in failed_testcase.get('platforms'):
-                                failed_testcase.get('platforms').append(platform)
+                            test_name = '%s#%s' % (test_class_name, test_name)
                         else:
-                            failed_tests_module[test_name]= {
-                                                                'test_name': test_name,
-                                                                'module_name': module_name,
-                                                                'result': test_result,
-                                                                'test_class': test_case.get("name"),
-                                                                'test_method': failed_test.get("name"),
-                                                                'abi_stacktrace': {abi: stacktrace},
-                                                                'message': message,
-                                                                'qa_job_ids': [ qa_job_id ],
-                                                                'kernel_versions': [ kernel_version ],
-                                                                'platforms': [ platform ],
-                                                            }
+                            test_name = '%s#%s#%s' % (test_class_name, test_name, abi)
+
+                        test_result = test_case.get('result')
+                        #result is one of: 'pass', 'fail', 'IGNORED', ASSUMPTION_FAILURE'
+
+                        if test_result == 'fail' or test_result == 'ASSUMPTION_FAILURE':
+                            message = test_case.find('.//Failure').get('message')
+                            stacktrace = test_case.find('.//Failure/StackTrace').text
+                            testcase_objs.append(TestCase(name=test_name,
+                                                result=test_result,
+                                                suite=module_name,
+                                                testsuite=test_module,
+                                                lava_nick=lava_config.get('nick'),
+                                                job_id=job_id,
+                                                message=message,
+                                                stacktrace=stacktrace))
+                        else:
+                            testcase_objs.append(TestCase(name=test_name,
+                                                result=test_result,
+                                                suite=module_name,
+                                                testsuite=test_module,
+                                                lava_nick=lava_config.get('nick'),
+                                                job_id=job_id))
+
+            # from itertools import islice
+            # batch_size = 999 # for sqlite https://docs.djangoproject.com/en/3.1/ref/models/querysets/#bulk-create
+            # while True:
+            #     batch = list(islice(testcase_objs, batch_size))
+            #     if not batch:
+            #         break
+            TestCase.objects.bulk_create(testcase_objs)
+
+            report_job.number_passed = number_passed
+            report_job.number_failed = number_failed
+            report_job.number_assumption_failure = number_assumption_failure
+            report_job.number_ignored = number_ignored
+            report_job.number_total = number_total
+            report_job.modules_done = modules_done
+            report_job.modules_total = modules_total
+            report_job.results_cached = True
+            report_job.save()
+            return True
 
         except ET.ParseError as e:
             logger.error('xml.etree.ElementTree.ParseError: %s' % e)
             logger.info('Please Check %s manually' % result_zip_path)
+            return False
 
-    numbers_hash = {
-                'number_total': number_total,
-                'number_passed': number_passed,
-                'number_failed': number_failed,
-                'number_assumption_failure': number_assumption_failure,
-                'number_ignored': number_ignored,
-                'modules_done': modules_done,
-                'modules_total': modules_total,
-            }
+
+def get_testcases_number_for_job_with_qa_job_id(qa_job_id):
     test_numbers = qa_report.TestNumbers()
-    test_numbers.addWithHash(numbers_hash)
+    try:
+        db_report_job = ReportJob.objects.get(qa_job_id=qa_job_id)
+        if db_report_job.results_cached:
+            test_numbers.addWithDatabaseRecord(db_report_job)
+
+    except ReportJob.DoesNotExist:
+        logger.info("Job with qa_job_id(%s) not found" % qa_job_id)
+
+    return test_numbers
+
+
+def extract(result_zip_path, failed_testcases_all={}, metadata={}):
+    kernel_version = metadata.get('kernel_version')
+    platform = metadata.get('platform')
+    qa_job_id = metadata.get('qa_job_id')
+
+    test_numbers = get_testcases_number_for_job_with_qa_job_id(qa_job_id)
+    test_cases = TestCase.objects.filter(lava_nick=metadata.get('lava_nick'), job_id=metadata.get('job_id')).filter(Q(result='fail')|Q(result='ASSUMPTION_FAILURE'))
+    for test_case in test_cases:
+        test_name = test_case.name
+        test_suite = test_case.testsuite
+
+        abi = test_suite.abi
+        module_name = test_suite.name
+        failed_tests_module = failed_testcases_all.get(module_name)
+        if not failed_tests_module:
+            failed_tests_module = {}
+            failed_testcases_all[module_name] = failed_tests_module
+
+        message = test_case.message
+        stacktrace = test_case.stacktrace
+
+        failed_testcase = failed_tests_module.get(test_name)
+        if failed_testcase:
+            if failed_testcase.get('abi_stacktrace').get(abi) is None:
+                failed_testcase.get('abi_stacktrace')[abi] = stacktrace
+
+            if not qa_job_id in failed_testcase.get('qa_job_ids'):
+                failed_testcase.get('qa_job_ids').append(qa_job_id)
+
+            if not kernel_version in failed_testcase.get('kernel_versions'):
+                failed_testcase.get('kernel_versions').append(kernel_version)
+
+            if not platform in failed_testcase.get('platforms'):
+                failed_testcase.get('platforms').append(platform)
+        else:
+            (test_class, test_method) = test_name.split('#')[0:2]
+            failed_tests_module[test_name]= {
+                                                'test_name': test_name,
+                                                'module_name': module_name,
+                                                'result': test_case.result,
+                                                'test_class': test_class,
+                                                'test_method': test_method,
+                                                'abi_stacktrace': {abi: stacktrace},
+                                                'message': message,
+                                                'qa_job_ids': [ qa_job_id ],
+                                                'kernel_versions': [ kernel_version ],
+                                                'platforms': [ platform ],
+                                            }
+
     return test_numbers
 
 
@@ -397,62 +451,22 @@ def get_last_trigger_build(project=None):
 
 
 def get_testcases_number_for_job(job):
-    job_number_passed = 0
-    job_number_failed = 0
-    job_number_assumption_failure = 0
-    job_number_ignored = 0
-    job_number_total = 0
-    modules_total = 0
-    modules_done = 0
+    test_numbers = qa_report.TestNumbers()
     finished_successfully = False
 
     job_name = job.get('name')
     #'benchmark', 'boottime', '-boot', '-vts', 'cts', 'cts-presubmit'
     is_cts_vts_job = job_name.find('cts') >= 0 or job_name.find('vts') >= 0
     if is_cts_vts_job:
-        result_file_path = get_result_file_path(job=job)
-        if result_file_path and os.path.exists(result_file_path):
-            try:
-                with zipfile.ZipFile(result_file_path, 'r') as f_zip_fd:
-                    try:
-                        root = ET.fromstring(remove_xml_unsupport_character(f_zip_fd.read(TEST_RESULT_XML_NAME).decode('utf-8')))
-                        summary_node = root.find('Summary')
-                        job_number_passed = summary_node.attrib['pass']
-                        job_number_failed = summary_node.attrib['failed']
-                        assumption_failures = root.findall(".//Module/TestCase/Test[@result='ASSUMPTION_FAILURE']")
-                        job_number_assumption_failure = len(assumption_failures)
-                        ignored_testcases = root.findall(".//Module/TestCase/Test[@result='IGNORED']")
-                        job_number_ignored = len(ignored_testcases)
-                        all_testcases = root.findall(".//Module/TestCase/Test")
-                        job_number_total = len(all_testcases)
-                        modules_total = summary_node.attrib['modules_total']
-                        modules_done = summary_node.attrib['modules_done']
-                        if int(modules_total) > 0:
-                            # treat job as not finished successfully when no modules to be reported
-                            finished_successfully = True
-                        else:
-                            finished_successfully = False
-                    except ET.ParseError as e:
-                        logger.error('xml.etree.ElementTree.ParseError: %s' % e)
-                        logger.info('Please Check %s manually' % result_file_path)
-            except zipfile.BadZipFile:
-                logger.info("File is not a zip file: %s" % result_file_path)
-
+        test_numbers = get_testcases_number_for_job_with_qa_job_id(job.get('id'))
+        if test_numbers.modules_total > 0:
+            finished_successfully = True
     elif job.get('job_status') == 'Complete':
         finished_successfully = True
-    else:
-        finished_successfully = False
 
-    job['numbers'] = {
-            'number_passed': int(job_number_passed),
-            'number_failed': int(job_number_failed),
-            'number_assumption_failure': int(job_number_assumption_failure),
-            'number_ignored': int(job_number_ignored),
-            'number_total': job_number_total,
-            'modules_total': int(modules_total),
-            'modules_done': int(modules_done),
-            'finished_successfully': finished_successfully
-            }
+    numberHash = test_numbers.toHash()
+    numberHash['finished_successfully'] = finished_successfully
+    job['numbers'] = numberHash
 
     return job['numbers']
 
@@ -1257,11 +1271,14 @@ def list_jobs(request):
             stacktrace_msg = ''
             if (len(abis) == 2) and (abi_stacktrace.get(abis[0]) != abi_stacktrace.get(abis[1])):
                 for abi in abis:
-                    stacktrace_msg = '%s\n\n%s:\n%s' % (stacktrace_msg, abi, abi_stacktrace.get(abi))
+                    stacktrace_msg = '%s\n\n%s:\n%s' % (stacktrace_msg, abi, abi_stacktrace.get(abi, ""))
             else:
-                stacktrace_msg = abi_stacktrace.get(abis[0])
+                stacktrace_msg = abi_stacktrace.get(abis[0], "")
 
             failure['abis'] = abis
+            # if stacktrace_msg is None:
+            #     failure['stacktrace'] = "Failed to get the stacktrace_msg"
+            # else:
             failure['stacktrace'] = stacktrace_msg.strip()
 
             failures_list.append(failure)

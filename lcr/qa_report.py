@@ -268,8 +268,11 @@ class QAReportApi(RESTFullApi):
             return 'https://%s/' % self.domain.strip('/')
 
 
-    def get_projects(self):
-        api_url = "/api/projects/"
+    def get_projects(self, filter_url=None):
+        if filter_url is not None:
+            api_url = filter_url
+        else:
+            api_url = "/api/projects/"
         return self.get_list_results(api_url=api_url)
 
 
@@ -335,7 +338,8 @@ class QAReportApi(RESTFullApi):
 
 
     def get_project_with_name(self, project_name):
-        for project in self.get_projects():
+        api_url = "/api/projects/?{}".format(project_name)
+        for project in self.get_projects(filter_url=api_url):
             if project.get('full_name') == project_name:
                 return project
         return None
@@ -525,6 +529,20 @@ class TestNumbers():
         return self
 
 
+    def toHash(self):
+        return  {
+            'number_passed': self.number_passed,
+            'number_failed': self.number_failed,
+            'number_assumption_failure': self.number_assumption_failure,
+            'number_ignored': self.number_ignored,
+            'number_total': self.number_total,
+            'modules_done': self.modules_done,
+            'modules_total': self.modules_total,
+            'jobs_finished': self.jobs_finished,
+            'jobs_total': self.jobs_total,
+            }
+
+
     def addWithTestNumbers(self, testNumbers):
         self.number_passed = self.number_passed + testNumbers.number_passed
         self.number_failed = self.number_failed + testNumbers.number_failed
@@ -537,3 +555,53 @@ class TestNumbers():
         self.jobs_total = self.jobs_total + testNumbers.jobs_total
 
         return self
+
+
+    def addWithDatabaseRecord(self, db_record):
+        self.number_passed = self.number_passed + db_record.number_passed
+        self.number_failed = self.number_failed + db_record.number_failed
+        self.number_assumption_failure = self.number_assumption_failure + db_record.number_assumption_failure
+        self.number_ignored = self.number_ignored + db_record.number_ignored
+        self.number_total = self.number_total + db_record.number_total
+        self.modules_done = self.modules_done + db_record.modules_done
+        self.modules_total = self.modules_total + db_record.modules_total
+        if hasattr(db_record, 'jobs_finished'):
+            self.jobs_finished = self.jobs_finished + db_record.jobs_finished
+        if hasattr(db_record, 'jobs_total'):
+            self.jobs_total = self.jobs_total + testNumbers.jobs_total
+
+        return self
+
+
+    def setValueForDatabaseRecord(self, db_record):
+        db_record.number_passed = self.number_passed
+        db_record.number_failed = self.number_failed
+        db_record.number_assumption_failure = self.number_assumption_failure
+        db_record.number_ignored = self.number_ignored
+        db_record.number_total = self.number_total
+        db_record.modules_done = self.modules_done
+        db_record.modules_total = self.modules_total
+
+        if hasattr(db_record, 'jobs_finished'):
+            db_record.jobs_finished = self.jobs_finished
+        if hasattr(db_record, 'jobs_total'):
+            db_record.jobs_total = self.jobs_total
+
+        return db_record
+
+
+    def setHashValueForDatabaseRecord(db_record, numbers_of_result):
+        db_record.number_passed = numbers_of_result.get('number_passed')
+        db_record.number_failed = numbers_of_result.get('number_failed')
+        db_record.number_assumption_failure = numbers_of_result.get('number_assumption_failure', 0)
+        db_record.number_ignored = numbers_of_result.get('number_ignored', 0)
+        db_record.number_total = numbers_of_result.get('number_total')
+        db_record.modules_done = numbers_of_result.get('modules_done')
+        db_record.modules_total = numbers_of_result.get('modules_total')
+
+        if hasattr(db_record, 'jobs_finished'):
+            db_record.jobs_finished = numbers_of_result.get('jobs_finished', 0)
+        if hasattr(db_record, 'jobs_total'):
+            db_record.jobs_total = numbers_of_result.get('jobs_total', 0)
+
+        return db_record

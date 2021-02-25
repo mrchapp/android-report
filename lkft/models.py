@@ -169,14 +169,30 @@ class ReportJob(models.Model):
     objects = models.Manager()
 
 
+class TestSuite(models.Model):
+    report_job = models.ForeignKey(ReportJob)
+
+    name = models.CharField(max_length=256)
+    abi = models.CharField(max_length=16, null=True)
+    done = models.BooleanField(default=False)
+    number_pass = models.IntegerField(default=0)
+    number_total = models.IntegerField(default=0)
+
+
 class TestCase(models.Model):
     name = models.CharField(max_length=256)
-    result = models.CharField(max_length=16)
+    result = models.CharField(max_length=64)
     measurement = models.DecimalField( max_digits=20, decimal_places=2, null=True)
     unit = models.CharField(max_length=128, null=True)
-    suite = models.CharField(max_length=64)
+    suite = models.CharField(max_length=256)
     job_id = models.CharField(max_length=16)
     lava_nick = models.CharField(max_length=64)
+
+    # failure should be deleted when this testcase deleted
+    testsuite = models.ForeignKey(TestSuite, null=True)
+
+    message = models.TextField(null=True, blank=True)
+    stacktrace = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
         if self.measurement:
