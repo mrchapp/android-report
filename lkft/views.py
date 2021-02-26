@@ -183,6 +183,8 @@ def download_attachments_save_result(jobs=[]):
             lava_config = job.get('lava_config')
             job_id = job.get('job_id')
             job_results = qa_report.LAVAApi(lava_config=lava_config).get_job_results(job_id=job_id)
+
+            TestCase.objects.filter(lava_nick=lava_config.get('nick'), job_id=job_id).delete()
             for test in job_results:
                 if test.get("suite") == "lava":
                     continue
@@ -196,8 +198,6 @@ def download_attachments_save_result(jobs=[]):
                 else:
                     test["measurement"] = "{:.2f}".format(float(test.get("measurement")))
 
-                TestCase.objects.filter(lava_nick=lava_config.get('nick'),
-                                            job_id=job_id).delete()
                 TestCase.objects.create(name=test.get("name"),
                                             result=test.get("result"),
                                             measurement=test.get("measurement"),
