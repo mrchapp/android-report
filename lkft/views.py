@@ -353,13 +353,19 @@ def save_tradeded_results_to_database(result_file_path, job, report_job):
                                                 lava_nick=lava_config.get('nick'),
                                                 job_id=job_id))
 
+            # the CtsDeqpTestCases module has about 1494348 testcases
+            # it would take about 4GB memory with batch_size = 100000
+            batch_size = 100000 # for sqlite https://docs.djangoproject.com/en/3.1/ref/models/querysets/#bulk-create
             # from itertools import islice
-            # batch_size = 999 # for sqlite https://docs.djangoproject.com/en/3.1/ref/models/querysets/#bulk-create
+            # total_size = 0
             # while True:
             #     batch = list(islice(testcase_objs, batch_size))
             #     if not batch:
             #         break
-            TestCase.objects.bulk_create(testcase_objs)
+            #     return_objs = TestCase.objects.bulk_create(batch, batch_size)
+            #     total_size = total_size + len(return_objs)
+            #     logger.info("LIUYQ build_created %d/%d" % (total_size, len(testcase_objs)))
+            TestCase.objects.bulk_create(testcase_objs, batch_size)
 
             report_job.number_passed = number_passed
             report_job.number_failed = number_failed
@@ -370,6 +376,9 @@ def save_tradeded_results_to_database(result_file_path, job, report_job):
             report_job.modules_total = modules_total
             report_job.results_cached = True
             report_job.save()
+
+            # seem not much help on the memory buff/cache release
+            del testcase_objs
             return True
 
         except ET.ParseError as e:
