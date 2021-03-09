@@ -19,7 +19,11 @@
     </tr>
     <tr>
         <th>Status</th>
-        <td>{{kernel_change.result}}</td>
+        <td>
+            {{kernel_change.result}}
+            <br>
+            <a target='_blank' href="/lkft/cancel-kernelchange/{{kernel_change.branch}}/{{kernel_change.describe}}">Want to Cancel?</a>
+        </td>
     </tr>
     <tr>
         <th>Reported Status</th>
@@ -153,7 +157,17 @@
         <a href="/lkft/builds?project_id={{report_build.qa_project.project_id}}">{{report_build.qa_project.name}}</a><br/>
         <a href="https://qa-reports.linaro.org/{{report_build.qa_project.group}}/{{report_build.qa_project.slug}}/build/{{kernel_change.describe}}">Link To QA-REPORT</a>
     </td>
-    <td align='right'>{{report_build.status}}</td>
+    <td align='right'>{{report_build.status}}
+        {% if report_build.build_status == "JOBSNOTSUBMITTED" %}
+        <p style="background-color: yellow">{{ report_build.build_status}}</p>
+        <a target='_blank' href="/lkft/cancel-build/{{report_build.qa_build_id}}/">Want to Cancel?</a>
+        {% elif build.build_status == "JOBSINPROGRESS" %}
+        <p style="background-color: green">{{ report_build.build_status}}</p>
+        <a target='_blank' href="/lkft/cancel-build/{{report_build.qa_build_id}}/">Want to Cancel?</a>
+        {% else %}
+        <p>{{ report_build.build_status}}</p>
+        {% endif %}
+    </td>
     <td><p>Started at {{ report_build.started_at|date:'M. d, Y, H:i'}},<br/>{{ report_build.started_at|timesince}} ago</p></td>
     <td align='right'>{{report_build.duration}}</td>
     <td align='right'><a href="/lkft/jobs/?build_id={{report_build.qa_build_id}}">{{report_build.number_passed}}</a></td>

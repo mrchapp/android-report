@@ -1714,8 +1714,7 @@ def cancel_job(request, qa_job_id):
     return redirect(qa_job.get('external_url'))
 
 
-@login_required
-def cancel_build(request, qa_build_id):
+def cancel_build_jobs(qa_build_id):
     qa_jobs = qa_report_api.get_jobs_for_build(qa_build_id)
     for qa_job in qa_jobs:
         if qa_job.get('job_status') != 'Submitted' \
@@ -1731,7 +1730,26 @@ def cancel_build(request, qa_build_id):
 
         res = qa_report.LAVAApi(lava_config=lava_config).cancel_job(lava_job_id=qa_job.get('job_id'))
         logger.info("Tried to canncel job with res.status_code=%s: %s" % (res.status_code, qa_job.get('external_url')))
+
+
+@login_required
+def cancel_build(request, qa_build_id):
+    cancel_build_jobs(qa_build_id)
     return redirect("/lkft/jobs/?build_id={}".format(qa_build_id))
+
+
+@login_required
+def cancel_kernelchange(request, branch, describe):
+    try:
+        kernel_change = KernelChange.objects.get(branch=branch, describe=describe)
+        reportbuilds = ReportBuild.objects.filter(kernel_change=kernel_change)
+        for reportbuild in reportbuilds:
+            cancel_build_jobs(reportbuild.qa_build_id)
+    except KernelChange.DoesNotExist:
+        err_msg = 'KernelChange for branch=%s, describe=%s does not exist' % (branch, describe)
+        logger.info(err_msg)
+
+    return redirect("/lkft/kernel-changes/{}/{}".format(branch, describe))
 
 
 def new_kernel_changes(request, branch, describe, trigger_name, trigger_number):
@@ -1744,8 +1762,6 @@ def new_kernel_changes(request, branch, describe, trigger_name, trigger_number):
     remote_host = request.META.get("REMOTE_HOST")
     logger.info('request from remote_host=%s,remote_addr=%s' % (remote_host, remote_addr))
     logger.info('request for branch=%s, describe=%s, trigger_name=%s, trigger_number=%s' % (branch, describe, trigger_name, trigger_number))
-
-    irc.sendAndQuit(msgStrOrAry="New kernel changes found: branch=%s, describe=%s, %s" % (branch, describe, "https://ci.linaro.org/job/%s/%s" % (trigger_name, trigger_number)))
 
     err_msg = None
     try:
@@ -1762,8 +1778,21 @@ def new_kernel_changes(request, branch, describe, trigger_name, trigger_number):
                                 number=trigger_number,
                                 kernel_change=kernel_change)
 
-
     if err_msg is None:
+        # 5.12.0-rc2-17254a8cc04c or 5.11.0-25247974812c
+        kernel_version="-".join(describe.split('-')[0:-1])
+        kernelchanges = KernelChange.objects.filter(branch=branch, describe__endswith='%s-' % kernel_version).order_by('-trigger_number')
+        kernelchanges_to_be_cancelled = []
+        for kernelcahnge in kernelchanges:
+            kernelchanges_to_be_cancelled.append("    https://android.linaro.org/lkft/kernel-changes/%s/%s/" % (kernelcahnge.branch, kernelcahnge.describe))
+
+        msgStrOrAry = ["New kernel changes found: branch=%s, describe=%s, %s" % (branch, describe, "https://ci.linaro.org/job/%s/%s" % (trigger_name, trigger_number))]
+        if len(kernelchanges_to_be_cancelled) > 0:
+            msgStrOrAry.append("And the jobs for the following kernel version could be cancelled")
+            msgStrOrAry.extend(kernelchanges_to_be_cancelled)
+
+        irc.sendAndQuit(msgStrOrAry=msgStrOrAry)
+
         return HttpResponse(status=200)
     else:
         return HttpResponse("ERROR:%s" % err_msg,
