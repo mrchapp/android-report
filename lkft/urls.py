@@ -23,6 +23,7 @@ urlpatterns = [
     url(r'^resubmit-job/.*$', views.resubmit_job, name='resubmit_job'),
     url(r'^cancel-job/(%s)/$' % (numerical_pat), views.cancel_job, name='cancel_job'),
     url(r'^cancel-build/(%s)/$' % (numerical_pat), views.cancel_build, name='cancel_build'),
+    url(r'^cancel-kernelchange/(%s)/(%s)$' % (numerical_pat, basic_pat), views.cancel_kernelchange, name='cancel_kernelchange'),
     # newchanges/$branch/$describe/$build_name/$build_number
     url(r'^newchanges/(%s)/(%s)/(%s)/([0-9]+)' % (basic_pat, basic_pat, basic_pat), views.new_kernel_changes),
     # newchanges/$branch/$describe/$build_name/$build_number
