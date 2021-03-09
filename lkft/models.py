@@ -7,7 +7,7 @@ from django.db import models
 
 class KernelChangeManager(models.Manager):
     def get_queryset(self):
-        return super(KernelChangeManager, self).get_queryset().filter(reported=False)
+        return super(KernelChangeManager, self).get_queryset().filter(reported=False).order_by('branch', 'trigger_name', '-trigger_number')
 
 class KernelChange(models.Model):
     branch = models.CharField(max_length=255)
