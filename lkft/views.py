@@ -27,7 +27,7 @@ import zipfile
 from django.contrib.auth.decorators import login_required
 from django.utils.timesince import timesince
 
-from lcr.settings import FILES_DIR, LAVA_SERVERS, BUGZILLA_API_KEY, BUILD_WITH_JOBS_NUMBER
+from lcr.settings import FILES_DIR, LAVA_SERVERS, BUGZILLA_API_KEY, BUILD_WITH_JOBS_NUMBER, DB_USE_POSTGRES
 from lcr.settings import QA_REPORT, QA_REPORT_DEFAULT, JENKINS, JENKINS_DEFAULT
 from lcr.irc import IRC
 
@@ -353,19 +353,29 @@ def save_tradeded_results_to_database(result_file_path, job, report_job):
                                                 lava_nick=lava_config.get('nick'),
                                                 job_id=job_id))
 
-            # the CtsDeqpTestCases module has about 1494348 testcases
-            # it would take about 4GB memory with batch_size = 100000
-            batch_size = 100000 # for sqlite https://docs.djangoproject.com/en/3.1/ref/models/querysets/#bulk-create
-            # from itertools import islice
-            # total_size = 0
-            # while True:
-            #     batch = list(islice(testcase_objs, batch_size))
-            #     if not batch:
-            #         break
-            #     return_objs = TestCase.objects.bulk_create(batch, batch_size)
-            #     total_size = total_size + len(return_objs)
-            #     logger.info("LIUYQ build_created %d/%d" % (total_size, len(testcase_objs)))
-            TestCase.objects.bulk_create(testcase_objs, batch_size)
+            if DB_USE_POSTGRES:
+                # the CtsDeqpTestCases module has about 1494348 testcases
+                # it would take about 4GB memory with batch_size = 100000
+                batch_size = 100000 # for sqlite https://docs.djangoproject.com/en/3.1/ref/models/querysets/#bulk-create
+                # from itertools import islice
+                # total_size = 0
+                # while True:
+                #     batch = list(islice(testcase_objs, batch_size))
+                #     if not batch:
+                #         break
+                #     return_objs = TestCase.objects.bulk_create(batch, batch_size)
+                #     total_size = total_size + len(return_objs)
+                #     logger.info("LIUYQ build_created %d/%d" % (total_size, len(testcase_objs)))
+                TestCase.objects.bulk_create(testcase_objs, batch_size)
+            else:
+                # otherwise following error will be reported:
+                #    Traceback (most recent call last):
+                #   File "/SATA3/django_instances/workspace-python3/lib/python3.7/site-packages/django/db/backends/utils.py", line 64, in execute
+                #       return self.cursor.execute(sql, params)
+                #   File "/SATA3/django_instances/workspace-python3/lib/python3.7/site-packages/django/db/backends/sqlite3/base.py", line 328, in execute
+                #       return Database.Cursor.execute(self, query, params)
+                #   sqlite3.OperationalError: too many terms in compound SELECT
+                TestCase.objects.bulk_create(testcase_objs)
 
             report_job.number_passed = number_passed
             report_job.number_failed = number_failed
