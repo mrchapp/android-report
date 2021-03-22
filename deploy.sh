@@ -51,6 +51,7 @@ source ${virenv_dir}/bin/activate
 
 #https://docs.djangoproject.com/en/1.11/topics/install/#installing-official-release
 pip install Django==1.11.17 pyaml django-crispy-forms python-ldap django-auth-ldap requests reportlab psycopg2 python-dateutil
+pip install matplotlib
 #pip install Django==1.11.8
 #pip install Django==3.0.8
 #pip install pyaml
