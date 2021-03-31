@@ -980,8 +980,23 @@ def get_measurements_of_project(project_id=None, project_name=None, project_grou
                             unit = test_case_res.unit
                             measurement = test_case_res.measurement
                         except TestCase.DoesNotExist:
-                            unit = '--'
-                            measurement = '--'
+                            if benchmark_job_name == "boottime":
+                                if testsuite == 'boottime-fresh-install':
+                                    test_cases = TestCase.objects.filter(job_id=job_lava_id, lava_nick=lava_nick, suite__endswith='_%s' % "boottime-first-analyze", name=testcase)
+                                elif testsuite == 'boottime-reboot':
+                                    test_cases = TestCase.objects.filter(job_id=job_lava_id, lava_nick=lava_nick, suite__endswith='_%s' % "boottime-second-analyze", name=testcase)
+                                else:
+                                    test_cases = []
+                            else:
+                                test_cases = []
+
+                            if len(test_cases) > 0:
+                                test_case_res = test_cases[0]
+                                unit = test_case_res.unit
+                                measurement = test_case_res.measurement
+                            else:
+                                unit = '--'
+                                measurement = '--'
 
                     onebuild_onejob_testcases_res.append({
                         'unit': unit,
