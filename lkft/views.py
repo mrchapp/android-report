@@ -776,6 +776,17 @@ def list_rc_projects(request):
     title_head = "LKFT RC Projects"
     return list_group_projects(request, groups=groups, title_head=title_head)
 
+@login_required
+def list_benchmark_projects(request):
+    groups = [
+                {
+                    'group_name': 'android-lkft-benchmarks',
+                    'display_title': "Benchmark Projects",
+                },
+            ]
+
+    title_head = "LKFT Benchmark Projects"
+    return list_group_projects(request, groups=groups, title_head=title_head)
 
 @login_required
 def list_projects(request):
@@ -784,14 +795,14 @@ def list_projects(request):
                     'group_name': 'android-lkft',
                     'display_title': "LKFT Projects",
                 },
-                {
-                    'group_name': 'android-lkft-benchmarks',
-                    'display_title': "Benchmark Projects",
-                },
-                {
-                    'group_name': 'android-lkft-rc',
-                    'display_title': "RC Projects",
-                },
+                # {
+                #     'group_name': 'android-lkft-benchmarks',
+                #     'display_title': "Benchmark Projects",
+                # },
+                # {
+                #     'group_name': 'android-lkft-rc',
+                #     'display_title': "RC Projects",
+                # },
             ]
 
     title_head = "LKFT Projects"
