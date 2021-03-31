@@ -16,8 +16,8 @@ optee = { # job_name: ['test_suite', ],
 benchmarks_common = {  # job_name: {'test_suite':['test_case',]},
                 "boottime": {
                               #'boottime-analyze': ['KERNEL_BOOT_TIME_avg', 'ANDROID_BOOT_TIME_avg', 'TOTAL_BOOT_TIME_avg' ],
-                              'boottime-first-analyze': ['KERNEL_BOOT_TIME_avg', 'ANDROID_BOOT_TIME_avg', 'TOTAL_BOOT_TIME_avg' ],
-                              'boottime-second-analyze': ['KERNEL_BOOT_TIME_avg', 'ANDROID_BOOT_TIME_avg', 'TOTAL_BOOT_TIME_avg' ],
+                              'boottime-fresh-install': ['KERNEL_BOOT_TIME_avg', 'ANDROID_BOOT_TIME_avg', 'TOTAL_BOOT_TIME_avg' ],
+                              'boottime-reboot': ['KERNEL_BOOT_TIME_avg', 'ANDROID_BOOT_TIME_avg', 'TOTAL_BOOT_TIME_avg' ],
                             },
                 "basic": {
                             "meminfo-first": [ 'MemTotal', 'MemFree', 'MemAvailable'],
