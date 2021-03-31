@@ -7,7 +7,11 @@
 {% block content %}
 <div>
 <ul class="nav nav-tabs">
-    {% if benchmark_jobs_data %}
+    {% if boottime_jobs_data %}
+        <li class="active"><a data-toggle="tab" href="#boottime">Boottime Results</a></li>
+        <li><a data-toggle="tab" href="#benchmarks">Benchmark Results</a></li>
+        <li><a data-toggle="tab" href="#builds">Build List</a></li>
+    {% elif benchmark_jobs_data %}
         <li class="active"><a data-toggle="tab" href="#benchmarks">Benchmark Results</a></li>
         <li><a data-toggle="tab" href="#builds">Build List</a></li>
     {% else %}
@@ -16,11 +20,13 @@
 </ul>
 
 <div class="tab-content">
-{% if benchmark_jobs_data %}
+<hr/>
+{% if boottime_jobs_data or benchmark_jobs_data %}
 <div id="builds" class="tab-pane fade">
 {% else %}
 <div id="builds" class="tab-pane fade in active">
 {% endif %}
+
 <table border="1">
     <tr>
         <th>Index</th>
@@ -89,10 +95,42 @@
 </table>
 </div>
 
+<!-- show boottime results -->
+{% if boottime_jobs_data %}
+<div id="boottime" class="tab-pane fade in active">
+<ul class="nav nav-tabs">
+    {% for one_benchmark_job in boottime_jobs_data %}
+        {% if forloop.first %}
+            <li class="active"><a data-toggle="tab" href="#{{one_benchmark_job.benchmark_job_name}}">{{one_benchmark_job.benchmark_job_name}}</a></li>
+        {% else %}
+            <li><a data-toggle="tab" href="#{{one_benchmark_job.benchmark_job_name}}">{{one_benchmark_job.benchmark_job_name}}</a></li>
+        {% endif %}
+    {% endfor %}
+</ul>
+
+<div class="tab-content">
+    {% for one_benchmark_job in boottime_jobs_data %}
+        {% if forloop.first %}
+            <div id="{{one_benchmark_job.benchmark_job_name}}" class="tab-pane fade in active">
+                {% include "show_trend.html" with one_benchmark_job=one_benchmark_job %}
+            </div>
+        {% else %}
+            <div id="{{one_benchmark_job.benchmark_job_name}}" class="tab-pane fade">
+                {% include "show_trend.html" with one_benchmark_job=one_benchmark_job %}
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+</div>
+{% endif %}
+
 <!-- show benchmark results -->
-<hr/>
 {% if benchmark_jobs_data %}
+{% if boottime_jobs_data %}
+<div id="benchmarks" class="tab-pane fade">
+{% else %}
 <div id="benchmarks" class="tab-pane fade in active">
+{% endif %}
 <ul class="nav nav-tabs">
     {% for one_benchmark_job in benchmark_jobs_data %}
         {% if forloop.first %}
