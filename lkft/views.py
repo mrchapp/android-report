@@ -943,6 +943,9 @@ def get_measurements_of_project(project_id=None, project_name=None, project_grou
                     target_job = job
                     break
 
+            if target_job is None:
+                continue
+
             onebuild_onejob_testcases_res = []
             onejob_testcases = []
             test_suites = benchmark_tests.get(benchmark_job_name)
