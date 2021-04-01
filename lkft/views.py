@@ -1062,12 +1062,16 @@ def list_builds(request):
     benchmark_jobs_data_dict = get_measurements_of_project(project_id=project_id)
 
     boottime_jobs_data_dict = benchmark_jobs_data_dict.pop('boottime', None)
+    if boottime_jobs_data_dict:
+        boottime_jobs_data = [boottime_jobs_data_dict]
+    else:
+        boottime_jobs_data = None
     return render(request, 'lkft-builds.html',
                            {
                                 "builds": builds_result,
                                 'project': project,
                                 "benchmark_jobs_data": benchmark_jobs_data_dict.values(),
-                                "boottime_jobs_data": [boottime_jobs_data_dict],
+                                "boottime_jobs_data": boottime_jobs_data,
                             })
 
 
