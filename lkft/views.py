@@ -686,7 +686,7 @@ def get_project_info(project):
 
 
 def thread_pool(func=None, elements=[]):
-    subgroup_count = 5
+    subgroup_count = 10
     number_of_elements = len(elements)
     number_of_subgroup = math.ceil(number_of_elements/subgroup_count)
     finished_count = 0
@@ -747,14 +747,15 @@ def get_projects_info(groups=[]):
     return groups
 
 
-def list_group_projects(request, groups=[], title_head="LKFT Projects"):
+def list_group_projects(request, groups=[], title_head="LKFT Projects", get_bugs=True):
     groups = get_projects_info(groups=groups)
-    bugs = get_lkft_bugs()
     open_bugs = []
-    for bug in bugs:
-        if bug.status == 'VERIFIED' or bug.status== 'RESOLVED':
-            continue
-        open_bugs.append(bug)
+    if get_bugs:
+        bugs = get_lkft_bugs()
+        for bug in bugs:
+            if bug.status == 'VERIFIED' or bug.status== 'RESOLVED':
+                continue
+            open_bugs.append(bug)
 
     response_data = {
         'open_bugs': open_bugs,
@@ -777,16 +778,16 @@ def list_rc_projects(request):
     return list_group_projects(request, groups=groups, title_head=title_head)
 
 @login_required
-def list_benchmark_projects(request):
+def list_boottime_projects(request):
     groups = [
                 {
                     'group_name': 'android-lkft-benchmarks',
-                    'display_title': "Benchmark Projects",
+                    'display_title': "Boottime Projects",
                 },
             ]
 
-    title_head = "LKFT Benchmark Projects"
-    return list_group_projects(request, groups=groups, title_head=title_head)
+    title_head = "LKFT Boottime Projects"
+    return list_group_projects(request, groups=groups, title_head=title_head, get_bugs=False)
 
 @login_required
 def list_projects(request):
