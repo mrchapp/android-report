@@ -161,9 +161,6 @@ JENKINS_DEFAULT = 'default'
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'dr663lyqjd_b-a*0ttwcycp5wfm7&$0-#l6odw#^==ewq!s51s'
-
 ALLOWED_HOSTS = [u'127.0.0.1',
                  u'android.linaro.org',
                  ]
