@@ -24,11 +24,13 @@ import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.models import User, AnonymousUser, Group as auth_group
 from django.utils.timesince import timesince
 
 from lcr.settings import FILES_DIR, LAVA_SERVERS, BUGZILLA_API_KEY, BUILD_WITH_JOBS_NUMBER
 from lcr.settings import QA_REPORT, QA_REPORT_DEFAULT, JENKINS, JENKINS_DEFAULT
+from lcr.settings import RESTRICTED_PROJECTS
 from lcr.irc import IRC
 
 from lcr import qa_report, bugzilla
@@ -706,7 +708,29 @@ def thread_pool(func=None, elements=[]):
     logger.info("Finished getting information for all elements: number_of_elements=%d, number_of_subgroup=%d, finished_count=%d" % (number_of_elements, number_of_subgroup, finished_count))
 
 
-def get_projects_info(groups=[]):
+def is_project_accessible(project_full_name=None, user=AnonymousUser):
+    if project_full_name is None:
+        return False
+
+    if user.is_superuser or user.is_staff:
+        return True
+
+    permissions = RESTRICTED_PROJECTS.get(project_full_name, None)
+    if permissions:
+        # this project is one restricted project
+        for permission in permissions:
+            if user.has_perm(permission):
+                # the user has the permission specified
+                return True
+        # the user does not have any permission required to view the project
+        return False
+    else:
+        # the project is not a restricted project, which means it is a public project
+        # then return True
+        return True
+
+
+def get_projects_info(groups=[], request=None):
     group_hash = {}
     for group in groups:
         group_hash[group.get('group_name')] = group
@@ -714,6 +738,11 @@ def get_projects_info(groups=[]):
     projects = []
     for project in qa_report_api.get_projects():
         if project.get('is_archived'):
+            continue
+
+        if request is not None and \
+            not is_project_accessible(project_full_name=project.get('full_name'), user=request.user):
+            # the current user has no permission to access the project
             continue
 
         group_name = project.get('full_name').split('/')[0]
@@ -748,7 +777,7 @@ def get_projects_info(groups=[]):
 
 
 def list_group_projects(request, groups=[], title_head="LKFT Projects", get_bugs=True):
-    groups = get_projects_info(groups=groups)
+    groups = get_projects_info(groups=groups, request=request)
     open_bugs = []
     if get_bugs:
         bugs = get_lkft_bugs()
@@ -765,8 +794,6 @@ def list_group_projects(request, groups=[], title_head="LKFT Projects", get_bugs
 
     return render(request, 'lkft-projects.html', response_data)
 
-
-@login_required
 def list_rc_projects(request):
     groups = [
                 {
@@ -777,7 +804,6 @@ def list_rc_projects(request):
     title_head = "LKFT RC Projects"
     return list_group_projects(request, groups=groups, title_head=title_head)
 
-@login_required
 def list_boottime_projects(request):
     groups = [
                 {
@@ -789,7 +815,6 @@ def list_boottime_projects(request):
     title_head = "LKFT Boottime Projects"
     return list_group_projects(request, groups=groups, title_head=title_head, get_bugs=False)
 
-@login_required
 def list_projects(request):
     groups = [
                 {
@@ -1035,11 +1060,15 @@ def get_measurements_of_project(project_id=None, project_name=None, project_grou
     return allbenchmarkjobs_result_dict
 
 
-@login_required
 def list_builds(request):
     project_id = request.GET.get('project_id', None)
     project =  qa_report_api.get_project(project_id)
     builds = qa_report_api.get_all_builds(project_id)
+
+    if not is_project_accessible(project_full_name=project.get('full_name'), user=request.user):
+        # the current user has no permission to access the project
+        return render(request, '401.html',
+                        status=401)
 
     try:
         db_reportproject = ReportProject.objects.get(project_id=project_id)
@@ -1155,6 +1184,7 @@ def get_project_jobs(project):
 
 
 @login_required
+@permission_required('lkft.admin_projects')
 def list_all_jobs(request):
     import threading
     threads = list()
@@ -1169,6 +1199,9 @@ def list_all_jobs(request):
         if not project_full_name.startswith("android-lkft/") \
                 and not project_full_name.startswith("android-lkft-benchmarks/") \
                 and not project_full_name.startswith("android-lkft-rc/"):
+            continue
+
+        if not is_project_accessible(project_full_name=project.get('full_name'), user=request.user):
             continue
 
         projects.append(project)
@@ -1203,13 +1236,16 @@ def list_all_jobs(request):
                             }
                 )
 
-
-@login_required
 def list_jobs(request):
     build_id = request.GET.get('build_id', None)
     build =  qa_report_api.get_build(build_id)
     project =  qa_report_api.get_project_with_url(build.get('project'))
     jobs = qa_report_api.get_jobs_for_build(build_id)
+
+    if not is_project_accessible(project_full_name=project.get('full_name'), user=request.user):
+        # the current user has no permission to access the project
+        return render(request, '401.html',
+                        status=401)
 
     project_name = project.get('name')
 
@@ -1223,6 +1259,13 @@ def list_jobs(request):
     benchmarks_res = []
     for job in jobs_to_be_checked:
         job['qa_job_id'] = job.get('id')
+        short_desc = "%s: %s job failed to get test result with %s" % (project_name, job.get('name'), build.get('version'))
+        new_bug_url = '%s&rep_platform=%s&version=%s&short_desc=%s' % ( bugzilla_instance.get_new_bug_url_prefix(),
+                                                                          get_hardware_from_pname(pname=project_name, env=job.get('environment')),
+                                                                          get_version_from_pname(pname=project_name),
+                                                                          short_desc)
+        job['new_bug_url'] = new_bug_url
+
         if is_benchmark_job(job.get('name')):
             expected_testsuites = get_benchmark_testsuites(job.get('name'))
             # local_job_name = job.get("name").replace("%s-%s-" % (build_name, build_no), "")
@@ -1255,12 +1298,6 @@ def list_jobs(request):
             continue # to check the next job
         else:
             # for cts/vts jobs
-            short_desc = "%s: %s job failed to get test result with %s" % (project_name, job.get('name'), build.get('version'))
-            new_bug_url = '%s&rep_platform=%s&version=%s&short_desc=%s' % ( bugzilla_instance.get_new_bug_url_prefix(),
-                                                                              get_hardware_from_pname(pname=project_name, env=job.get('environment')),
-                                                                              get_version_from_pname(pname=project_name),
-                                                                              short_desc)
-            job['new_bug_url'] = new_bug_url
 
             result_file_path = get_result_file_path(job=job)
             if not result_file_path or not os.path.exists(result_file_path):
@@ -1383,6 +1420,7 @@ class BugCreationForm(forms.Form):
     description = forms.CharField(label='Description', widget=forms.Textarea(attrs={'cols': 80}))
 
 @login_required
+@permission_required('lkft.admin_projects')
 def file_bug(request):
     submit_result = False
     if request.method == 'POST':
@@ -1582,6 +1620,7 @@ def file_bug(request):
 
 
 @login_required
+@permission_required('lkft.admin_projects')
 def resubmit_job(request):
     qa_job_ids = request.POST.getlist("qa_job_ids")
     if len(qa_job_ids) == 0:
@@ -1712,6 +1751,7 @@ def resubmit_job(request):
 
 
 @login_required
+@permission_required('lkft.admin_projects')
 def cancel_job(request, qa_job_id):
     qa_job = qa_report_api.get_job_with_id(qa_job_id)
     if qa_job.get('job_status') == 'Submitted' \
@@ -1726,6 +1766,7 @@ def cancel_job(request, qa_job_id):
 
 
 @login_required
+@permission_required('lkft.admin_projects')
 def cancel_build(request, qa_build_id):
     qa_jobs = qa_report_api.get_jobs_for_build(qa_build_id)
     for qa_job in qa_jobs:
@@ -2157,6 +2198,7 @@ def get_kernel_changes_for_all_branches():
 
 
 @login_required
+@permission_required('lkft.admin_projects')
 def list_kernel_changes(request):
     kernelchanges = get_kernel_changes_for_all_branches()
     return render(request, 'lkft-kernelchanges.html',
@@ -2166,6 +2208,7 @@ def list_kernel_changes(request):
             )
 
 @login_required
+@permission_required('lkft.admin_projects')
 def list_branch_kernel_changes(request, branch):
     db_kernelchanges = KernelChange.objects.all().filter(branch=branch).order_by('-trigger_number')
     kernelchanges = get_kernel_changes_info_wrapper_for_display(db_kernelchanges=db_kernelchanges)
@@ -2176,6 +2219,7 @@ def list_branch_kernel_changes(request, branch):
                         }
             )
 @login_required
+@permission_required('lkft.admin_projects')
 def list_describe_kernel_changes(request, branch, describe):
     db_kernel_change = KernelChange.objects.get(branch=branch, describe=describe)
     db_report_builds = ReportBuild.objects.filter(kernel_change=db_kernel_change).order_by('qa_project__group', 'qa_project__name')
@@ -2294,6 +2338,7 @@ def list_describe_kernel_changes(request, branch, describe):
 
 
 @login_required
+@permission_required('lkft.admin_projects')
 def mark_kernel_changes_reported(request, branch, describe):
     db_kernel_change = KernelChange.objects.get(branch=branch, describe=describe)
     db_kernel_change.reported = (not db_kernel_change.reported)

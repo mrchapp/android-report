@@ -53,6 +53,10 @@ DEPLOYED_WITH_APACHE = False
 
 DB_USE_POSTGRES = False
 
+RESTRICTED_PROJECTS = {
+    # "project_full_name": ["permissions"]
+    }
+
 # SECURITY WARNING: don't run with debug turned on in production!
 # https://docs.djangoproject.com/en/3.1/ref/settings/#debug
 DEBUG = True

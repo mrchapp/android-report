@@ -79,6 +79,15 @@ class ReportProject(models.Model):
 
     project_id = models.IntegerField(default=0)
 
+    is_public = models.BooleanField(default=True)
+
+    class Meta:
+        permissions = (
+            ("view_eap_projects", "Can see available eap projects"),
+            ("view_benchmark_projects", "Can see available benchmark projects"),
+            ("admin_projects", "Can do operations on the project, like job resubmission, job cancellation, build cancellation"),
+        )
+
     def __str__(self):
         return "%s#%s" % (self.group, self.name)
 
