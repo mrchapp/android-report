@@ -52,6 +52,10 @@ BUILD_WITH_JOBS_NUMBER = 10
 DEPLOYED_WITH_APACHE = False
 
 DB_USE_POSTGRES = False
+
+# SECURITY WARNING: don't run with debug turned on in production!
+# https://docs.djangoproject.com/en/3.1/ref/settings/#debug
+DEBUG = True
 ######################################################################
 ############VALUE TO OVERRIDE THE DEFAULT SETTINGS     ###############
 ######################################################################
@@ -150,9 +154,6 @@ JENKINS_DEFAULT = 'default'
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'dr663lyqjd_b-a*0ttwcycp5wfm7&$0-#l6odw#^==ewq!s51s'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = [u'127.0.0.1',
                  u'android.linaro.org',
