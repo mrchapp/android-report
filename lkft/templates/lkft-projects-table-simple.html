@@ -1,0 +1,14 @@
+<table border="1">
+    <tr>
+        <th>Index</th>
+        <th>Project</th>
+</tr>
+{% for project in projects %}
+<tr>
+    <td> {{ forloop.counter }}</td>
+    <td>
+        <a href="/lkft/builds?project_id={{project.id}}">{{project.name}}</a>
+    </td>
+</tr>
+{% endfor %}
+</table>

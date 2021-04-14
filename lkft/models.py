@@ -59,6 +59,9 @@ class CiBuild(models.Model):
     # CI_BUILD_DELETED / INPROGRESS / SUCCESS / FAILURE / ABORTED
     result = models.CharField(max_length=100, null=True, default="NOINFO")
 
+    display_name = models.CharField(max_length=255, null=True)
+    changes_num = models.IntegerField(default=0)
+
     def __str__(self):
         return "%s#%s" % (self.name, self.number)
 
@@ -80,6 +83,7 @@ class ReportProject(models.Model):
     project_id = models.IntegerField(default=0)
 
     is_public = models.BooleanField(default=True)
+    is_archived = models.BooleanField(default=True)
 
     class Meta:
         permissions = (
@@ -102,9 +106,10 @@ class ReportBuild(models.Model):
     version = models.CharField(max_length=100)
 
     qa_project = models.ForeignKey(ReportProject, on_delete=models.CASCADE, null=True)
-    kernel_change = models.ForeignKey(KernelChange, on_delete=models.CASCADE)
-    ci_build = models.ForeignKey(CiBuild, on_delete=models.CASCADE, related_name="ci_build")
-    ci_trigger_build = models.ForeignKey(CiBuild, on_delete=models.CASCADE, related_name='trigger_build')
+    kernel_change = models.ForeignKey(KernelChange, on_delete=models.CASCADE, null=True)
+    ci_build = models.ForeignKey(CiBuild, on_delete=models.CASCADE, related_name="ci_build", null=True)
+    ci_trigger_build = models.ForeignKey(CiBuild, on_delete=models.CASCADE, related_name='trigger_build', null=True)
+    finished = models.BooleanField(default=False)
 
     # JOBSNOTSUBMITTED / JOBSINPROGRESS / JOBSCOMPLETED
     status = models.CharField(max_length=100, null=True, default="NOINFO")
@@ -127,6 +132,10 @@ class ReportBuild(models.Model):
     # The id of the qa-report build id
     qa_build_id = models.IntegerField(default=0)
 
+    # the metadata url for the qa-report api, like
+    # https://qa-reports.linaro.org/api/builds/63239/metadata/
+    metadata_url = models.URLField(null=True)
+
     def __str__(self):
         return "%s#%s" % (self.qa_project, self.version)
 
@@ -145,15 +154,15 @@ class ReportJob(models.Model):
     qa_job_id = models.IntegerField(default=0)
 
     report_build = models.ForeignKey(ReportBuild, on_delete=models.CASCADE, null=True)
-    parent_job = models.CharField(max_length=100, null=True)
+    parent_job = models.CharField(max_length=100, null=True, blank=True)
     resubmitted = models.BooleanField(default=False)
 
     # JOBSNOTSUBMITTED / JOBSINPROGRESS / JOBSCOMPLETED
     status = models.CharField(max_length=100, null=True, default="NOINFO")
     failure_msg = models.TextField(null=True, blank=True)
 
-    submitted_at = models.DateTimeField(null=True)
-    fetched_at = models.DateTimeField(null=True)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    fetched_at = models.DateTimeField(null=True, blank=True)
 
     number_passed = models.IntegerField(default=0)
     number_failed = models.IntegerField(default=0)
@@ -162,6 +171,7 @@ class ReportJob(models.Model):
     number_total = models.IntegerField(default=0)
     modules_done = models.IntegerField(default=0)
     modules_total = models.IntegerField(default=0)
+    finished_successfully = models.BooleanField(default=False)
 
     def __str__(self):
         if self.report_build:

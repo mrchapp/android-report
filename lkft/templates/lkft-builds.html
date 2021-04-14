@@ -2,32 +2,51 @@
 
 {% block title %} Builds for {{ project.name }} {% endblock %}
 
-{% block headline %}<h1>Builds for <a href="https://qa-reports.linaro.org/{{project.full_name}}">{{ project.name }}</a></h1>{% endblock %}
+{% block headline %}
+    <h1><a href="/lkft">Home</a>&nbsp;&gt;&nbsp;<a href="https://qa-reports.linaro.org/{{project.full_name}}">{{ project.name }} </a></h1>
+{% endblock %}
 
 {% block content %}
-<div>
-<ul class="nav nav-tabs">
-    {% if boottime_jobs_data %}
-        <li class="active"><a data-toggle="tab" href="#boottime">Boottime Results</a></li>
-    {% endif %}
+<div class="row">
+<table class="table">
+<tbody>
+    <tr>
+        <td>
+            <ul class="nav nav-tabs">
+                {% if boottime_jobs_data %}
+                    <li class="active"><a data-toggle="tab" href="#boottime">Boottime Results</a></li>
+                {% endif %}
 
-    {% if benchmark_jobs_data %}
-        {% if boottime_jobs_data %}
-            <li><a data-toggle="tab" href="#benchmarks">Benchmark Results</a></li>
-        {% else %}
-            <li class="active"><a data-toggle="tab" href="#benchmarks">Benchmark Results</a></li>
-        {% endif %}
-    {% endif %}
+                {% if benchmark_jobs_data %}
+                    {% if boottime_jobs_data %}
+                        <li><a data-toggle="tab" href="#benchmarks">Benchmark Results</a></li>
+                    {% else %}
+                        <li class="active"><a data-toggle="tab" href="#benchmarks">Benchmark Results</a></li>
+                    {% endif %}
+                {% endif %}
 
-    {% if boottime_jobs_data or benchmark_jobs_data %}
-        <li><a data-toggle="tab" href="#builds">Build List</a></li>
-    {% else %}
-        <li class="active"><a data-toggle="tab" href="#builds">Build List</a></li>
-    {% endif %}
-</ul>
+                {% if builds %}
+                {% if boottime_jobs_data or benchmark_jobs_data %}
+                    <li><a data-toggle="tab" href="#builds">Build List</a></li>
+                {% else %}
+                    <li class="active"><a data-toggle="tab" href="#builds">Build List</a></li>
+                {% endif %}
+                {% endif %}
+            </ul>
+        </td>
+        <td style="text-align: right;">
+            {% if fetch_latest %}
+                <a href="/lkft/builds/?project_id={{project.id}}">Only show data cached</a>
+            {% else %}
+                <a href="/lkft/builds/?project_id={{project.id}}&fetch_latest=true">Refresh with the latest data</a>
+            {% endif %}
+        </td>
+    </tr></tbody>
+</table>
+</div>
 
 <div class="tab-content">
-<hr/>
+{% if builds %}
 {% if boottime_jobs_data or benchmark_jobs_data %}
 <div id="builds" class="tab-pane fade">
 {% else %}
@@ -101,6 +120,7 @@
 {% endfor %}
 </table>
 </div>
+{% endif %}
 
 <!-- show boottime results -->
 {% if boottime_jobs_data %}

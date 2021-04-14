@@ -74,10 +74,12 @@ def get_benchmark_job_name(lava_job_name):
             return b_job_name
     return None
 
-
 def is_benchmark_job(lava_job_name):
     benchmark_job_name = get_benchmark_job_name(lava_job_name)
     return benchmark_job_name is not None
+
+def is_cts_vts_job(lava_job_name):
+    return lava_job_name.find('cts') >= 0 or lava_job_name.find('vts') >= 0
 
 '''
     {

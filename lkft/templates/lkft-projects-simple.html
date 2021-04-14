@@ -1,0 +1,56 @@
+{% extends '_layouts/base.html' %}
+
+{% load static%}
+
+{% block title %} {{title_head}} {% endblock %}
+
+{% block headline %}<h1><a href="https://qa-reports.linaro.org/">{{title_head}}</a></h1>{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static "report/css/compatibility_result.css" %}">
+<script src="{% static "report/jquery.min.js" %}"></script>
+<script src="{% static "report/bootstrap.min.js" %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+<table class="table">
+<tbody>
+    <tr>
+        <td>
+            <ul class="nav nav-tabs">
+                {% for group in groups %}
+                    {% if forloop.first %}
+                        <li class="active"><a data-toggle="tab" href="#{{group.group_name}}">{{group.display_title}}</a></li>
+                    {% else %}
+                        <li><a data-toggle="tab" href="#{{group.group_name}}">{{group.display_title}}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+            </ul>
+        </td>
+
+        <td style="text-align: right;">
+            {% if fetch_latest %}
+                <a href="/lkft">Only show data cached</a>
+            {% else %}
+                <a href="/lkft/?fetch_latest=true">Refresh with the latest data</a>
+            {% endif %}
+        </td>
+    </tr></tbody>
+</table>
+</div>
+<div class="tab-content">
+    {% for group in groups %}
+        {% if forloop.first %}
+            <div id="{{group.group_name}}" class="tab-pane fade in active">
+                {% include "lkft-projects-table-simple.html" with projects=group.projects %}
+            </div>
+        {% else %}
+            <div id="{{group.group_name}}" class="tab-pane fade">
+                {% include "lkft-projects-table-simple.html" with projects=group.projects %}
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+{% endblock %}

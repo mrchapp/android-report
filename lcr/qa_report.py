@@ -133,7 +133,9 @@ class JenkinsApi(RESTFullApi):
         return self.call_with_full_url(request_url=full_api_url)
 
     def get_trigger_from_ci_build(self, jenkins_build):
+        logger.info("Try to find the trigger build for build: %s" % jenkins_build.get('url'))
         last_build_ci_build_actions = jenkins_build.get("actions")
+        is_user_triggered_build = False
         for action in last_build_ci_build_actions:
             action_class = action.get("_class")
             if not action_class or action_class != "hudson.model.CauseAction":
@@ -147,6 +149,9 @@ class JenkinsApi(RESTFullApi):
 
                 if cause_class == "hudson.triggers.SCMTrigger$SCMTriggerCause":
                     return jenkins_build
+                elif  cause_class == "hudson.model.Cause$UserIdCause":
+                    is_user_triggered_build = True
+                    continue
                 elif cause_class != "hudson.model.Cause$UpstreamCause":
                     continue
 
@@ -154,20 +159,27 @@ class JenkinsApi(RESTFullApi):
                 upstreamProject = cause.get("upstreamProject") # trigger-lkft-linaro-hikey
                 trigger_ci_build_url = self.get_job_url(name=upstreamProject, number=upstreamBuild)
                 trigger_build = self.get_build_details_with_full_url(trigger_ci_build_url)
+
+                logger.info("Found the trigger build for build: %s which is %s" % (jenkins_build.get('url'), trigger_ci_build_url))
                 return trigger_build
-        return None
+
+        if is_user_triggered_build:
+            return jenkins_build
+        else:
+            return None
 
     def get_final_trigger_from_ci_build(self, jenkins_build):
         build_url = jenkins_build.get('url')
         trigger_build = self.get_trigger_from_ci_build(jenkins_build)
         if trigger_build is None:
+            logger.info("Failed to get the trigger for build: %s" % build_url)
             return None
 
         trigger_url = trigger_build.get('url')
         if build_url != trigger_url:
             try:
                 new_trigger_build = self.get_build_details_with_full_url(trigger_url)
-                return self.get_trigger_from_ci_build(new_trigger_build)
+                return self.get_final_trigger_from_ci_build(new_trigger_build)
             except UrlNotFoundException:
                 logger.info("build job url is not found:{}".format(build_url))
                 return None
@@ -272,6 +284,11 @@ class QAReportApi(RESTFullApi):
         api_url = "/api/projects/"
         return self.get_list_results(api_url=api_url)
 
+    def get_projects_with_group_id(self, group_id):
+        # https://qa-reports.linaro.org/api/projects/?group=17
+        api_url = "/api/projects/?group={}".format(group_id)
+        return self.get_list_results(api_url=api_url)
+
 
     def get_project(self, project_id):
         api_url = "/api/projects/%s" % project_id
@@ -290,6 +307,13 @@ class QAReportApi(RESTFullApi):
         return self.call_with_full_url(request_url=project_url)
 
 
+    def get_project_api_url_with_project_id(self, project_id):
+        return "https://%s/api/projects/%s/" % (self.domain, project_id)
+
+    def get_project_full_name_with_group_and_slug(self, group_name, slug):
+        return "%s/%s" % (group_name, slug)
+
+
     def get_all_builds(self, project_id, only_first=False):
         builds_api_url = "api/projects/%s/builds" % project_id
         return self.get_list_results(api_url=builds_api_url, only_first=only_first)
@@ -298,6 +322,10 @@ class QAReportApi(RESTFullApi):
     def get_build(self, build_id):
         builds_api_url = "api/builds/%s" % build_id
         return self.call_with_api_url(api_url=builds_api_url)
+
+
+    def get_build_api_url_with_build_id(self, build_id):
+        return "https://%s/api/builds/%s/" % (self.domain, build_id)
 
 
     def get_build_url_with_group_slug_buildVersion(self, group, slug, build_version):
@@ -525,6 +553,20 @@ class TestNumbers():
         return self
 
 
+    def toHash(self):
+        return  {
+            'number_passed': self.number_passed,
+            'number_failed': self.number_failed,
+            'number_assumption_failure': self.number_assumption_failure,
+            'number_ignored': self.number_ignored,
+            'number_total': self.number_total,
+            'modules_done': self.modules_done,
+            'modules_total': self.modules_total,
+            'jobs_finished': self.jobs_finished,
+            'jobs_total': self.jobs_total,
+            }
+
+
     def addWithTestNumbers(self, testNumbers):
         self.number_passed = self.number_passed + testNumbers.number_passed
         self.number_failed = self.number_failed + testNumbers.number_failed
@@ -537,3 +579,53 @@ class TestNumbers():
         self.jobs_total = self.jobs_total + testNumbers.jobs_total
 
         return self
+
+
+    def addWithDatabaseRecord(self, db_record):
+        self.number_passed = self.number_passed + db_record.number_passed
+        self.number_failed = self.number_failed + db_record.number_failed
+        self.number_assumption_failure = self.number_assumption_failure + db_record.number_assumption_failure
+        self.number_ignored = self.number_ignored + db_record.number_ignored
+        self.number_total = self.number_total + db_record.number_total
+        self.modules_done = self.modules_done + db_record.modules_done
+        self.modules_total = self.modules_total + db_record.modules_total
+        if hasattr(db_record, 'jobs_finished'):
+            self.jobs_finished = self.jobs_finished + db_record.jobs_finished
+        if hasattr(db_record, 'jobs_total'):
+            self.jobs_total = self.jobs_total + testNumbers.jobs_total
+
+        return self
+
+
+    def setValueForDatabaseRecord(self, db_record):
+        db_record.number_passed = self.number_passed
+        db_record.number_failed = self.number_failed
+        db_record.number_assumption_failure = self.number_assumption_failure
+        db_record.number_ignored = self.number_ignored
+        db_record.number_total = self.number_total
+        db_record.modules_done = self.modules_done
+        db_record.modules_total = self.modules_total
+
+        if hasattr(db_record, 'jobs_finished'):
+            db_record.jobs_finished = self.jobs_finished
+        if hasattr(db_record, 'jobs_total'):
+            db_record.jobs_total = self.jobs_total
+
+        return db_record
+
+
+    def setHashValueForDatabaseRecord(db_record, numbers_of_result):
+        db_record.number_passed = numbers_of_result.get('number_passed')
+        db_record.number_failed = numbers_of_result.get('number_failed')
+        db_record.number_assumption_failure = numbers_of_result.get('number_assumption_failure', 0)
+        db_record.number_ignored = numbers_of_result.get('number_ignored', 0)
+        db_record.number_total = numbers_of_result.get('number_total')
+        db_record.modules_done = numbers_of_result.get('modules_done')
+        db_record.modules_total = numbers_of_result.get('modules_total')
+
+        if hasattr(db_record, 'jobs_finished'):
+            db_record.jobs_finished = numbers_of_result.get('jobs_finished', 0)
+        if hasattr(db_record, 'jobs_total'):
+            db_record.jobs_total = numbers_of_result.get('jobs_total', 0)
+
+        return db_record

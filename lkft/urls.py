@@ -5,10 +5,11 @@ from . import views
 basic_pat = '[a-zA-Z0-9][a-zA-Z0-9_.-]+'
 numerical_pat = '[1-9][0-9]+'
 urlpatterns = [
-    url(r'^$', views.list_projects, name='home'),
+    url(r'^$', views.list_projects_simple, name='home'),
     url(r'^boottime-projects/.*$', views.list_boottime_projects, name='list_boottime_projects'),
     url(r'^rc-projects/.*$', views.list_rc_projects, name='list_rc_projects'),
     url(r'^projects/.*$', views.list_projects, name='list_projects'),
+    url(r'^projects-simple/.*$', views.list_projects_simple, name='list_projects_simple'),
     url(r'^kernel-changes/$', views.list_kernel_changes, name='list_kernel_changes'),
     # newchanges/$branch/
     url(r'^kernel-changes/(%s)/$' % (basic_pat), views.list_branch_kernel_changes, name='list_branch_kernel_changes'),

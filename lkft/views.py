@@ -39,7 +39,7 @@ from lcr.utils import download_urllib
 from lkft.lkft_config import find_citrigger, find_cibuild, get_hardware_from_pname, get_version_from_pname, get_kver_with_pname_env
 from lkft.lkft_config import find_expect_cibuilds
 from lkft.lkft_config import get_qa_server_project, get_supported_branches
-from lkft.lkft_config import is_benchmark_job, get_benchmark_testsuites, get_expected_benchmarks
+from lkft.lkft_config import is_benchmark_job, is_cts_vts_job, get_benchmark_testsuites, get_expected_benchmarks
 
 from .models import KernelChange, CiBuild, ReportBuild, ReportProject, ReportJob, TestCase
 
@@ -102,20 +102,46 @@ def get_attachment_urls(jobs=[]):
     if len(jobs) == 0:
         return
 
-    first_job = jobs[0]
-    target_build = qa_report_api.get_build_with_url(first_job.get('target_build'))
-    target_build_metadata = qa_report_api.get_build_meta_with_url(target_build.get('metadata'))
-
+    needs_attachment_urls = False
     for job in jobs:
         lava_config = job.get('lava_config')
         if not lava_config :
             lava_config = find_lava_config(job.get('external_url'))
-            if not lava_config:
-                logger.error('lava server is not found for job: %s' % job.get('url'))
-                return None
-            else:
+            if lava_config:
                 job['lava_config'] = lava_config
+            else:
+                logger.error('lava server is not found for job: %s' % job.get('url'))
 
+        if is_benchmark_job(job.get('name')):
+            continue
+
+        if job.get("attachment_url") is not None:
+            continue
+
+        if not is_cts_vts_job(job.get('name')):
+            continue
+
+        try:
+            db_report_job = ReportJob.objects.get(job_url=job.get('external_url'))
+            if not job.get('job_status') or job.get('job_status') == 'Submitted' or job.get('job_status') == 'Running' \
+                    or not db_report_job.status or db_report_job.status != 'Complete' or db_report_job.status != 'Incomplete' or db_report_job.status != 'Canceled':
+                needs_attachment_urls = True
+                continue
+            else: # Complete
+                job["attachment_url"] = db_report_job.attachment_url
+        except ReportJob.DoesNotExist:
+            needs_attachment_urls = True
+            pass
+
+    if not needs_attachment_urls:
+        return
+
+    first_job = jobs[0]
+    target_build_id = first_job.get('target_build').strip('/').split('/')[-1]
+    db_report_build = ReportBuild.objects.get(qa_build_id=target_build_id)
+    target_build_metadata = qa_report_api.get_build_meta_with_url(db_report_build.metadata_url)
+
+    for job in jobs:
         if not job.get('job_status') or job.get('job_status') == 'Submitted' \
                 or job.get('job_status') == 'Running' \
                 or job.get('job_status') == 'Canceled' :
@@ -158,28 +184,87 @@ def get_result_file_path(job=None):
     return result_file_path
 
 def download_attachments_save_result(jobs=[]):
+    if len(jobs) == 0:
+        return
+    first_job = jobs[0]
+    target_project_id = first_job.get('target').strip('/').split('/')[-1]
+    target_build_id = first_job.get('target_build').strip('/').split('/')[-1]
+
+    report_project, created = ReportProject.objects.get_or_create(project_id=target_project_id)
+    if created:
+        target_project = qa_report_api.get_project(target_project_id)
+        report_project.group = qa_report_api.get_project_group(target_project),
+        report_project.name = target_project.get('name')
+        report_project.slug = target_project.get('slug')
+        report_project.is_archived = target_project.get('is_archived')
+        report_project.is_public = target_project.get('is_public')
+        report_project.save()
+
+    report_build, created = ReportBuild.objects.get_or_create(qa_build_id=target_build_id)
+    if created:
+        target_build = qa_report_api.get_build(target_build_id)
+        report_build.qa_project = report_project
+        report_build.version = target_build.get('version')
+        report_build.metadata_url = target_build.get('metadata')
+        report_build.started_at = target_build.get('created_at')
+        report_build.finished = target_build.get('finished')
+        report_build.save()
+
     # https://lkft.validation.linaro.org/scheduler/job/566144
     get_attachment_urls(jobs=jobs)
     for job in jobs:
+        # cache all the jobs, otherwise the status is not correct for the build
+        # if incomplete jobs are not cached.
+        report_job, created = ReportJob.objects.get_or_create(job_url=job.get('external_url'))
+        if not created:
+            if report_job.report_build is None:
+                report_job.report_build = report_build
+                report_job.save()
+            if report_job.results_cached:
+                continue
+        else:
+            report_job.job_name = job.get('name')
+            report_job.qa_job_id = job.get('id')
+            report_job.report_build = report_build
+            report_job.attachment_url = job.get('attachment_url')
+            report_job.parent_job = job.get('parent_job')
+            report_job.status = job.get('job_status') # all possible status: Submitted, Running, Complete, Incomplete, Canceled
+
+            if job.get('submitted_at'):
+                submitted_at = qa_report_api.get_aware_datetime_from_str(job.get('submitted_at'))
+            elif job.get('created_at'):
+                submitted_at = qa_report_api.get_aware_datetime_from_str(job.get('created_at'))
+            else:
+                submitted_at = None
+
+            if job.get('fetched_at'):
+                fetched_at = qa_report_api.get_aware_datetime_from_str(job.get('fetched_at'))
+            else:
+                fetched_at = None
+
+            report_job.fetched_at = fetched_at
+            report_job.submitted_at = submitted_at
+            report_job.save()
+
         if not job.get('lava_config'):
             continue
+
+        # For cases that fields changed but the record is there already
+        # The following items might be changed after job status changed, like from Running to Complete
+        report_job.status = job.get('job_status') # must be Complete here
+        report_job.attachment_url = job.get('attachment_url')
+        report_job.parent_job = job.get('parent_job')
+        if job.get('fetched_at'):
+            fetched_at = qa_report_api.get_aware_datetime_from_str(job.get('fetched_at'))
+        else:
+            fetched_at = None
+
+        report_job.fetched_at = fetched_at
+        if job.get('job_status') != 'Complete':
+            report_job.save()
+            continue
+
         if is_benchmark_job(job.get('name')):
-            if job.get('job_status') != 'Complete':
-                continue
-
-            try:
-                report_job = ReportJob.objects.get(job_url=job.get('external_url'))
-                if report_job.results_cached:
-                    continue
-            except ReportJob.DoesNotExist:
-                report_job = ReportJob.objects.create(job_url=job.get('external_url'),
-                                    job_name=job.get('name'),
-                                    attachment_url=job.get('attachment_url'),
-                                    qa_job_id=job.get('id'),
-                                    parent_job= job.get('parent_job'),
-                                    status=job.get('job_status'),
-                                    )
-
             # for benchmark jobs
             lava_config = job.get('lava_config')
             job_id = job.get('job_id')
@@ -222,10 +307,8 @@ def download_attachments_save_result(jobs=[]):
                                             job_id=job_id)
 
 
-            report_job.results_cached = True
-            report_job.save()
 
-        else:
+        elif is_cts_vts_job(job.get('name')):
             # for cts /vts jobs
             job_id = job.get('job_id')
             job_url = job.get('external_url')
@@ -257,6 +340,16 @@ def download_attachments_save_result(jobs=[]):
                         os.unlink(tar_f)
                     else:
                         logger.info("Failed to decompress %s with xz -d command for job: %s " % (temp_path, job_url))
+
+            job_numbers = get_testcases_number_for_job(job)
+            qa_report.TestNumbers.setHashValueForDatabaseRecord(report_job, job_numbers)
+        else:
+            # for other jobs like the boot job and other benchmark jobs
+            pass
+
+        report_job.results_cached = True
+        report_job.finished_successfully = True
+        report_job.save()
 
 
 def remove_xml_unsupport_character(etree_content=""):
@@ -512,10 +605,15 @@ def get_test_result_number_for_build(build, jobs=None):
 
     jobs_finished = 0
     for job in jobs_to_be_checked:
-        numbers = get_testcases_number_for_job(job)
-        test_numbers.addWithHash(numbers)
-        if numbers.get('finished_successfully'):
-            jobs_finished = jobs_finished + 1
+        try:
+            report_job = ReportJob.objects.get(job_url=job.get('external_url'))
+            test_numbers.addWithDatabaseRecord(report_job)
+            if report_job.finished_successfully:
+                jobs_finished = jobs_finished + 1
+        except ReportJob.DoesNotExist:
+            # the job is not completed,
+            # so no number would be calculated
+            pass
 
     return {
         'number_passed': test_numbers.number_passed,
@@ -528,6 +626,7 @@ def get_test_result_number_for_build(build, jobs=None):
         'jobs_total': len(jobs_to_be_checked),
         'jobs_finished': jobs_finished,
         }
+
 
 def get_lkft_build_status(build, jobs):
     if not jobs:
@@ -583,6 +682,40 @@ def get_trigger_url_from_db_report_build(db_report_build):
 
 
 def get_trigger_from_qareport_build(qareport_build):
+    db_report_build, build_created = ReportBuild.objects.get_or_create(qa_build_id=qareport_build.get('id'))
+    if not build_created:
+        if db_report_build.ci_trigger_build:
+            ci_trigger_build = {}
+            ci_trigger_build['name'] = db_report_build.ci_trigger_build.name
+            ci_trigger_build['number'] = db_report_build.ci_trigger_build.number
+            ci_trigger_build['duration'] = db_report_build.ci_trigger_build.duration
+            ci_trigger_build['result'] = db_report_build.ci_trigger_build.result
+            ci_trigger_build['start_timestamp'] = db_report_build.ci_trigger_build.timestamp
+            ci_trigger_build['displayName'] = db_report_build.ci_trigger_build.display_name
+            ci_trigger_build['changes_num'] = db_report_build.ci_trigger_build.changes_num
+            ci_trigger_build['url'] = jenkins_api.get_job_url(name=db_report_build.ci_trigger_build.name, number=db_report_build.ci_trigger_build.number)
+
+            return ci_trigger_build
+    else:
+        target_project_id = qareport_build.get('project').strip('/').split('/')[-1]
+        db_report_project, project_created = ReportProject.objects.get_or_create(project_id=target_project_id)
+        if project_created:
+            target_project = qa_report_api.get_project(target_project_id)
+            db_report_project.group = qa_report_api.get_project_group(target_project)
+            db_report_project.name = target_project.get('name')
+            db_report_project.slug = target_project.get('slug')
+            db_report_project.is_public = target_project.get('is_public')
+            db_report_project.save()
+
+        db_report_build.qa_project = db_report_project
+        db_report_build.version = qareport_build.get('version')
+        db_report_build.metadata_url = qareport_build.get('metadata')
+        db_report_build.started_at = qareport_build.get('created_at')
+        db_report_build.fetched_at = qareport_build.get('last_fetched_timestamp')
+        db_report_build.finished = qareport_build.get('finished')
+        db_report_build.status = qareport_build.get('build_status')
+        db_report_build.save()
+
     build_meta = qa_report_api.get_build_meta_with_url(qareport_build.get('metadata'))
     if not build_meta:
         return None
@@ -598,11 +731,69 @@ def get_trigger_from_qareport_build(qareport_build):
         # not sure what might be  here now
         pass
 
+    # https://ci.linaro.org/job/lkft-hikey-android-10.0-gsi-4.19/119/
+    ci_build_number = ci_build_url.strip('/').split('/')[-1]
+    ci_build_name = ci_build_url.strip('/').split('/')[-2]
+    db_ci_build = CiBuild.objects.get_or_create(name=ci_build_name, number=ci_build_number)[0]
+
+    if not db_report_build.ci_build:
+        db_report_build.ci_build = db_ci_build
+        db_report_build.save()
+
     try:
         ci_build = jenkins_api.get_build_details_with_full_url(build_url=ci_build_url)
-        trigger_ci_build = jenkins_api.get_final_trigger_from_ci_build(ci_build)
-        return trigger_ci_build
+        db_ci_build.timestamp = qa_report_api.get_aware_datetime_from_timestamp(int(ci_build['timestamp'])/1000)
+        db_ci_build.display_name = ci_build.get('displayName')
+        if ci_build.get('building'):
+            db_ci_build.result = 'INPROGRESS'
+            db_ci_build.duration = datetime.timedelta(milliseconds=0).total_seconds()
+        else:
+            db_ci_build.result = ci_build.get('result')
+            db_ci_build.duration =  datetime.timedelta(milliseconds=ci_build['duration']).total_seconds()
+        db_ci_build.save()
+
     except UrlNotFoundException:
+        db_ci_build.result = 'CI_BUILD_DELETED'
+        db_ci_build.duration = datetime.timedelta(milliseconds=0).total_seconds()
+        ci_build = None
+
+
+    if ci_build:
+        try:
+            trigger_ci_build = jenkins_api.get_final_trigger_from_ci_build(ci_build)
+            trigger_ci_build_url = trigger_ci_build.get('url')
+            trigger_ci_build_number = trigger_ci_build_url.strip('/').split('/')[-1]
+            trigger_ci_build_name = trigger_ci_build_url.strip('/').split('/')[-2]
+
+            db_trigger_ci_build = CiBuild.objects.get_or_create(name=trigger_ci_build_name, number=trigger_ci_build_number)[0]
+
+            db_report_build.ci_trigger_build = db_trigger_ci_build
+            db_report_build.save()
+
+            if trigger_ci_build.get('building'):
+                db_trigger_ci_build.result = 'INPROGRESS'
+                db_trigger_ci_build.duration = datetime.timedelta(milliseconds=0).total_seconds()
+            else:
+                db_trigger_ci_build.result = ci_build.get('result')
+                db_trigger_ci_build.duration =  datetime.timedelta(milliseconds=trigger_ci_build['duration']).total_seconds()
+
+            change_items = []
+            changes = trigger_ci_build.get('changeSet')
+            if changes:
+                change_items = changes.get('items')
+
+            trigger_ci_build['changes_num'] = len(change_items)
+            trigger_ci_build['start_timestamp'] = qa_report_api.get_aware_datetime_from_timestamp(int(trigger_ci_build['timestamp'])/1000)
+
+            db_trigger_ci_build.timestamp = trigger_ci_build.get('start_timestamp')
+            db_trigger_ci_build.display_name = trigger_ci_build.get('displayName')
+            db_trigger_ci_build.changes_num = len(change_items)
+            db_trigger_ci_build.save()
+
+            return trigger_ci_build
+        except UrlNotFoundException:
+            return None
+    else:
         return None
 
 
@@ -835,11 +1026,11 @@ def list_projects(request):
     return list_group_projects(request, groups=groups, title_head=title_head)
 
 
-def get_build_info(db_reportproject=None, build=None):
+def get_build_info(db_reportproject=None, build=None, fetch_latest_from_qa_report=False):
     if not build:
         return
 
-    logger.info("Start to get information for build: %s ", build.get('version'))
+    logger.info("Start getting information for build: %s %s", build.get('version'), build.get('build_status'))
     db_report_build = None
     if db_reportproject:
         try:
@@ -847,32 +1038,21 @@ def get_build_info(db_reportproject=None, build=None):
         except ReportBuild.DoesNotExist:
             pass
 
-    if db_report_build:
-        final_jobs = ReportJob.objects.filter(report_build=db_report_build, resubmitted=False)
-        final_jobs_finished = final_jobs.filter(status='Complete')
-        finished_cts_vts_jobs = final_jobs_finished.filter(Q(job_name__icontains='cts')|Q(job_name__icontains='vts')).filter(modules_total__gt=0).count()
-        finished_other_jobs = final_jobs_finished.exclude(Q(job_name__icontains='cts')|Q(job_name__icontains='vts')).count()
+    jobs = get_jobs_for_build_from_db_or_qareport(build_id=build.get("id"), force_fetch_from_qareport=fetch_latest_from_qa_report)
 
-        build['numbers'] = {
-            'number_passed': db_report_build.number_passed,
-            'number_failed': db_report_build.number_failed,
-            'number_assumption_failure': db_report_build.number_assumption_failure,
-            'number_ignored': db_report_build.number_ignored,
-            'number_total': db_report_build.number_total,
-            'modules_done': db_report_build.modules_done,
-            'modules_total': db_report_build.modules_total,
-            'jobs_finished': finished_cts_vts_jobs + finished_other_jobs,
-            'jobs_total': len(final_jobs),
-            }
+    if not fetch_latest_from_qa_report and db_report_build and db_report_build.status == 'JOBSCOMPLETED':
         build['created_at'] = db_report_build.started_at
         build['build_status'] = db_report_build.status
         build['last_fetched_timestamp'] = db_report_build.fetched_at
 
         trigger_build_db = db_report_build.ci_trigger_build
-        trigger_build_url = jenkins_api.get_job_url(name=trigger_build_db.name, number=trigger_build_db.number)
-        try:
-            trigger_build = jenkins_api.get_build_details_with_full_url(build_url=trigger_build_url)
-        except UrlNotFoundException:
+        if trigger_build_db:
+            trigger_build_url = jenkins_api.get_job_url(name=trigger_build_db.name, number=trigger_build_db.number)
+            try:
+                trigger_build = jenkins_api.get_build_details_with_full_url(build_url=trigger_build_url)
+            except UrlNotFoundException:
+                trigger_build = None
+        else:
             trigger_build = None
 
         # Need to cache the ci build information into result
@@ -884,43 +1064,20 @@ def get_build_info(db_reportproject=None, build=None):
         #    'changes_num': '-',
         #}
     else:
-        ## For cases that the build information still not cached into database yet
-        build_numbers = qa_report.TestNumbers()
-        jobs = qa_report_api.get_jobs_for_build(build.get("id"))
-
         build['created_at'] = qa_report_api.get_aware_datetime_from_str(build.get('created_at'))
-        get_lkft_build_status(build, jobs)
-
-        temp_build_numbers = get_test_result_number_for_build(build, jobs)
-        build_numbers.addWithHash(temp_build_numbers)
-
-        build['numbers'] = {
-                            'number_passed': build_numbers.number_passed,
-                            'number_failed': build_numbers.number_failed,
-                            'number_assumption_failure': build_numbers.number_assumption_failure,
-                            'number_ignored': build_numbers.number_ignored,
-                            'number_total': build_numbers.number_total,
-                            'modules_done': build_numbers.modules_done,
-                            'modules_total': build_numbers.modules_total,
-                            'jobs_finished': build_numbers.jobs_finished,
-                            'jobs_total': build_numbers.jobs_total,
-                            }
-
         trigger_build = get_trigger_from_qareport_build(build)
 
+    get_lkft_build_status(build, jobs)
+    build['numbers'] = get_test_result_number_for_build(build, jobs)
+
     if trigger_build:
-        trigger_build['start_timestamp'] = qa_report_api.get_aware_datetime_from_timestamp(int(trigger_build['timestamp'])/1000)
         trigger_build['duration'] = datetime.timedelta(milliseconds=trigger_build['duration'])
-        change_items = []
-        changes = trigger_build.get('changeSet')
-        if changes:
-            change_items = changes.get('items')
         build['trigger_build'] = {
             'name': trigger_build.get('name'),
             'url': trigger_build.get('url'),
             'displayName': trigger_build.get('displayName'),
             'start_timestamp': trigger_build.get('start_timestamp'),
-            'changes_num': len(change_items),
+            'changes_num': trigger_build.get('changes_num'),
         }
 
     if  build['build_status'] == "JOBSCOMPLETED":
@@ -933,7 +1090,52 @@ def get_build_info(db_reportproject=None, build=None):
     return build
 
 
-def get_measurements_of_project(project_id=None, project_name=None, project_group=None, benchmark_jobs=[], testsuites=[], testcases=[]):
+def get_jobs_for_build_from_db_or_qareport(build_id=None, force_fetch_from_qareport=False):
+    needs_fetch_jobs = False
+    if not force_fetch_from_qareport:
+        jobs = []
+        try:
+            db_report_build = ReportBuild.objects.get(qa_build_id=build_id)
+            db_report_jobs = ReportJob.objects.filter(report_build=db_report_build)
+            if len(db_report_jobs) == 0:
+                logger.info("No jobs found for build: %s", build_id)
+                needs_fetch_jobs = True
+            else:
+                for db_report_job in db_report_jobs:
+                    job = {}
+                    job['external_url'] = db_report_job.job_url
+                    job['name'] = db_report_job.job_name
+                    job['attachment_url'] = db_report_job.attachment_url
+                    job['id'] = db_report_job.qa_job_id
+                    job['parent_job'] = db_report_job.parent_job
+                    job['job_status'] = db_report_job.status
+                    job['target'] = qa_report_api.get_project_api_url_with_project_id(db_report_job.report_build.qa_project.project_id)
+                    job['target_build'] = qa_report_api.get_build_api_url_with_build_id(db_report_job.report_build.qa_build_id)
+                    job['submitted'] = True
+                    job['submitted_at'] = db_report_job.submitted_at
+                    if db_report_job.fetched_at:
+                        job['fetched'] = True
+                        job['fetched_at'] = db_report_job.fetched_at
+
+                    job['job_id'] = qa_report_api.get_qa_job_id_with_url(db_report_job.job_url)
+                    lava_config = find_lava_config(db_report_job.job_url)
+                    if lava_config:
+                        job['lava_config'] = lava_config
+
+                    jobs.append(job)
+        except ReportBuild.DoesNotExist:
+            needs_fetch_jobs = True
+            db_report_build = None
+
+    if force_fetch_from_qareport or needs_fetch_jobs:
+        logger.info("Try to get jobs for build from qareport: %s force_fetch_from_qareport=%s, needs_fetch_jobs=%s", build_id, force_fetch_from_qareport, needs_fetch_jobs)
+        jobs = qa_report_api.get_jobs_for_build(build_id)
+        logger.info("Finsihed getting jobs for build from qareport: %s force_fetch_from_qareport=%s, needs_fetch_jobs=%s", build_id, force_fetch_from_qareport, needs_fetch_jobs)
+
+    return jobs
+
+
+def get_measurements_of_project(project_id=None, project_name=None, project_group=None, project=None, builds=[], benchmark_jobs=[], testsuites=[], testcases=[], fetch_latest_from_qa_report=False):
     # if project_id is not None:
     #     db_report_project = ReportProject.objects.get(project_id=project_id)
     # elif project_group is None:
@@ -942,12 +1144,18 @@ def get_measurements_of_project(project_id=None, project_name=None, project_grou
     #     db_report_project = ReportProject.objects.get(group=project_group, name=project_name)
 
     # db_report_builds = ReportBuild.objects.filter(qa_project=db_report_project)
-    project =  qa_report_api.get_project(project_id)
-    project_full_name = project.get('full_name')
+    if project is not None:
+        local_project = project
+    else:
+        local_project = qa_report_api.get_project(project_id)
+    project_full_name = local_project.get('full_name')
     if project_full_name.find("android-lkft-benchmarks") < 0:
         return {}
 
-    builds = qa_report_api.get_all_builds(project_id)
+    if builds and len(builds) > 0:
+        local_builds = builds
+    else:
+        local_builds = qa_report_api.get_all_builds(local_project.get('id'))
 
     benchmark_tests = get_expected_benchmarks()
     expected_benchmark_jobs = sorted(benchmark_tests.keys())
@@ -956,8 +1164,8 @@ def get_measurements_of_project(project_id=None, project_name=None, project_grou
 
     allbenchmarkjobs_result_dict = {}
     # for db_report_build in db_report_builds:
-    for build in builds[:BUILD_WITH_JOBS_NUMBER]:
-        jobs = qa_report_api.get_jobs_for_build(build.get("id"))
+    for build in local_builds[:BUILD_WITH_JOBS_NUMBER]:
+        jobs = get_jobs_for_build_from_db_or_qareport(build_id=build.get("id"), force_fetch_from_qareport=fetch_latest_from_qa_report)
         jobs_to_be_checked = get_classified_jobs(jobs=jobs).get('final_jobs')
         download_attachments_save_result(jobs_to_be_checked)
 
@@ -1043,7 +1251,7 @@ def get_measurements_of_project(project_id=None, project_name=None, project_grou
             onebuild_onejob_result = {
                 "build_no": build.get('version'),
                 "qa_build_id": build.get('id'),
-                "build_name": project.get('full_name'),
+                "project_full_name": project_full_name,
                 'test_cases_res': onebuild_onejob_testcases_res,
                 }
 
@@ -1056,55 +1264,88 @@ def get_measurements_of_project(project_id=None, project_name=None, project_grou
                     }
             else:
                 benchmark_job_results.get('trend_data').append(onebuild_onejob_result)
-
     return allbenchmarkjobs_result_dict
 
 
 def list_builds(request):
     project_id = request.GET.get('project_id', None)
-    project =  qa_report_api.get_project(project_id)
-    builds = qa_report_api.get_all_builds(project_id)
+    fetch_latest_from_qa_report = request.GET.get('fetch_latest', "false").lower() == 'true'
 
-    if not is_project_accessible(project_full_name=project.get('full_name'), user=request.user):
+    logger.info("Start for list_builds: %s" % project_id)
+    needs_fetch_builds_from_qareport = False
+    builds = []
+    try:
+        db_reportproject = ReportProject.objects.get(project_id=project_id)
+        project_full_name = "%s/%s" % (db_reportproject.group, db_reportproject.slug)
+        project = {
+                    'full_name': project_full_name,
+                    'id': project_id,
+                    'name': db_reportproject.name,
+                    }
+    except ReportProject.DoesNotExist:
+        project =  qa_report_api.get_project(project_id)
+        project_full_name = project.get('full_name')
+        needs_fetch_builds_from_qareport = True
+        db_reportproject = None
+
+    if not fetch_latest_from_qa_report and db_reportproject:
+        db_report_builds = ReportBuild.objects.filter(qa_project=db_reportproject).order_by('-qa_build_id')
+        if len(db_report_builds) > 0:
+            for db_report_build in db_report_builds:
+                build = {}
+                build['id'] = db_report_build.qa_build_id
+                build['version'] = db_report_build.version
+                build['metadata'] = db_report_build.metadata_url
+                build['created_at'] = db_report_build.started_at
+                builds.append(build)
+        else:
+            needs_fetch_builds_from_qareport = True
+
+    if not is_project_accessible(project_full_name=project_full_name, user=request.user):
         # the current user has no permission to access the project
         return render(request, '401.html',
                         status=401)
 
-    try:
-        db_reportproject = ReportProject.objects.get(project_id=project_id)
-    except ReportProject.DoesNotExist:
-        db_reportproject = None
+    if fetch_latest_from_qa_report or needs_fetch_builds_from_qareport:
+        builds = qa_report_api.get_all_builds(project_id)
 
     builds_result = []
-    for build in builds[:BUILD_WITH_JOBS_NUMBER]:
-        builds_result.append(get_build_info(db_reportproject, build))
+    if project_full_name.find("android-lkft-benchmarks") < 0:
+        for build in builds[:BUILD_WITH_JOBS_NUMBER]:
+            builds_result.append(get_build_info(db_reportproject, build, fetch_latest_from_qa_report=fetch_latest_from_qa_report))
 
-    #func = functools.partial(get_build_info, db_reportproject)
-    #with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
-    #    builds_result = list(executor.map(func, builds[:BUILD_WITH_JOBS_NUMBER]))
+        #func = functools.partial(get_build_info, db_reportproject)
+        #with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+        #    builds_result = list(executor.map(func, builds[:BUILD_WITH_JOBS_NUMBER]))
 
-#   ## The following two method cause Segmentation fault (core dumped)
-#   ## Sep 23 11:01:18 laptop kernel: [13401.895696] traps: python[26374] general protection fault ip:7f7e62987ac2 sp:7f7e6113b3f0 error:0 in _queue.cpython-37m-x86_64-linux-gnu.so[7f7e62987000+1000]
-#    with multiprocessing.Pool(10) as pool:
-#        pool.map(func, builds_result)
-#    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-#        executor.map(func, builds_result)
+    #   ## The following two method cause Segmentation fault (core dumped)
+    #   ## Sep 23 11:01:18 laptop kernel: [13401.895696] traps: python[26374] general protection fault ip:7f7e62987ac2 sp:7f7e6113b3f0 error:0 in _queue.cpython-37m-x86_64-linux-gnu.so[7f7e62987000+1000]
+    #    with multiprocessing.Pool(10) as pool:
+    #        pool.map(func, builds_result)
+    #    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    #        executor.map(func, builds_result)
 
-    logger.info("Finished getting information for all builds: %d ", len(builds_result))
-
-    benchmark_jobs_data_dict = get_measurements_of_project(project_id=project_id)
-
-    boottime_jobs_data_dict = benchmark_jobs_data_dict.pop('boottime', None)
-    if boottime_jobs_data_dict:
-        boottime_jobs_data = [boottime_jobs_data_dict]
-    else:
+        benchmark_jobs_data_dict = {}
         boottime_jobs_data = None
+
+    else:
+        benchmark_jobs_data_dict = get_measurements_of_project(project=project, builds=builds, fetch_latest_from_qa_report=fetch_latest_from_qa_report)
+
+        boottime_jobs_data_dict = benchmark_jobs_data_dict.pop('boottime', None)
+        if boottime_jobs_data_dict:
+            boottime_jobs_data = [boottime_jobs_data_dict]
+        else:
+            boottime_jobs_data = None
+
+    logger.info("End for list_builds: %s" % project_id)
+
     return render(request, 'lkft-builds.html',
                            {
                                 "builds": builds_result,
                                 'project': project,
                                 "benchmark_jobs_data": benchmark_jobs_data_dict.values(),
                                 "boottime_jobs_data": boottime_jobs_data,
+                                'fetch_latest': fetch_latest_from_qa_report,
                             })
 
 
@@ -2345,6 +2586,122 @@ def mark_kernel_changes_reported(request, branch, describe):
     db_kernel_change.save()
     return redirect("/lkft/kernel-changes/{}/{}/".format(branch, describe))
 
+
+def homepage(request):
+    return render(request, 'lkft-homepage.html')
+
+def list_projects_simple(request):
+
+    fetch_latest_from_qa_report = request.GET.get('fetch_latest', "false").lower() == 'true'
+
+    groups = [
+            {
+                'group_id': '42',
+                'group_name': 'android-lkft-benchmarks',
+                'display_title': "Boottime Projects",
+            },
+            {
+                'group_id': '17',
+                'group_name': 'android-lkft',
+                'display_title': "LKFT Projects",
+            },
+            # {
+            #     'group_name': 'android-lkft-rc',
+            #     'display_title': "RC Projects",
+            # },
+        ]
+
+    for group in groups:
+        group_id = group.get('group_id')
+        group_name = group.get('group_name')
+
+
+        logger.info('start to get the projects for group %s' %  group.get('group_name'))
+        projects = []
+        if fetch_latest_from_qa_report:
+            projects = qa_report_api.get_projects_with_group_id(group_id)
+            for target_project in projects:
+                ReportProject.objects.update_or_create(
+                        project_id=target_project.get('id'),
+                        group=qa_report_api.get_project_group(target_project),
+                        name=target_project.get('name'),
+                        slug=target_project.get('slug'),
+                        is_public=target_project.get('is_public'),
+                        is_archived=target_project.get('is_archived'))
+        else:
+            db_report_projects = ReportProject.objects.filter(group=group_name)
+            for db_project in db_report_projects:
+                project = {
+                            'full_name': qa_report_api.get_project_full_name_with_group_and_slug(group_name, db_project.slug),
+                            'name': db_project.name,
+                            'slug': db_project.slug,
+                            'id': db_project.project_id,
+                            'is_public': db_project.is_public,
+                            'is_archived': db_project.is_archived,
+                            }
+                projects.append(project)
+
+        logger.info('end to get the projects for group %s' %  group.get('group_name'))
+        for project in projects:
+            if project.get('is_archived'):
+                continue
+
+            if not is_project_accessible(project_full_name=project.get('full_name'), user=request.user):
+                # the current user has no permission to access the project
+                continue
+
+            project['group'] = group
+
+            group_projects = group.get('projects')
+            if group_projects:
+                group_projects.append(project)
+            else:
+                group['projects'] = [project]
+                group['qareport_url'] = project.get('group')
+
+
+
+    def get_project_name(item):
+        #4.19q
+        versions = item.get('name').split('-')[0].split('.')
+        try:
+            version_0 = int(versions[0])
+
+            if versions[1].endswith('o'):
+                version_1 = int(versions[1].strip('o'))
+                version_2 = "o"
+            elif versions[1].endswith('p'):
+                version_1 = int(versions[1].strip('p'))
+                version_2 = "p"
+            elif versions[1].endswith('q'):
+                version_1 = int(versions[1].strip('q'))
+                version_2 = "q"
+            else:
+                version_1 = int(versions[1])
+                version_2 = ""
+        except ValueError:
+            version_0 = 256
+            version_1 = ""
+            version_2 = ""
+
+        return (version_0, version_1, version_2)
+
+    for group in groups:
+        if group.get('projects'):
+            sorted_projects = sorted(group['projects'], key=get_project_name)
+            group['projects'] = sorted_projects
+        else:
+            group['projects'] = []
+
+
+    title_head = "LKFT Projects"
+    response_data = {
+        'title_head': title_head,
+        'groups': groups,
+        'fetch_latest': fetch_latest_from_qa_report,
+    }
+
+    return render(request, 'lkft-projects-simple.html', response_data)
 
 ########################################
 ### Register for IRC functions
