@@ -160,6 +160,8 @@ class ReportJob(models.Model):
     # JOBSNOTSUBMITTED / JOBSINPROGRESS / JOBSCOMPLETED
     status = models.CharField(max_length=100, null=True, default="NOINFO")
     failure_msg = models.TextField(null=True, blank=True)
+    # null=True vs blank=True: https://stackoverflow.com/questions/8609192/what-is-the-difference-between-null-true-and-blank-true-in-django
+    environment = models.CharField(max_length=100, blank=True)
 
     submitted_at = models.DateTimeField(null=True, blank=True)
     fetched_at = models.DateTimeField(null=True, blank=True)

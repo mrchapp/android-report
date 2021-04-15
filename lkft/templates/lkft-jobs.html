@@ -6,7 +6,7 @@
 
 {% block title %} Jobs for {{ project.name }} {{ build.version }} {% endblock %}
 
-{% block headline %}<h1>Jobs for <a href="/lkft/builds/?project_id={{project.id}}"> {{ project.name }}</a>&nbsp;<a href="https://qa-reports.linaro.org/{{project.full_name}}/build/{{build.version}}">{{ build.version }}</a></h1>{% endblock %}
+{% block headline %}<h1> <a href="/lkft/"> Home</a>&nbsp;&gt;&nbsp;<a href="/lkft/builds/?project_id={{project.id}}"> {{ project.name }}</a>&nbsp;&gt;&nbsp;<a href="https://qa-reports.linaro.org/{{project.full_name}}/build/{{build.version}}">{{ build.version }}</a></h1>{% endblock %}
 
 {% block css %}
 <link rel="stylesheet" href="{% static "report/css/compatibility_result.css" %}">

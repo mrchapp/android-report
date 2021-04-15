@@ -228,6 +228,7 @@ def download_attachments_save_result(jobs=[]):
             report_job.report_build = report_build
             report_job.attachment_url = job.get('attachment_url')
             report_job.parent_job = job.get('parent_job')
+            report_job.environment = job.get('environment')
             report_job.status = job.get('job_status') # all possible status: Submitted, Running, Complete, Incomplete, Canceled
 
             if job.get('submitted_at'):
@@ -1090,6 +1091,73 @@ def get_build_info(db_reportproject=None, build=None, fetch_latest_from_qa_repor
     return build
 
 
+def get_project_from_database_or_qareport(project_id, force_fetch_from_qareport=False):
+    needs_fetch_latest = False
+    if not force_fetch_from_qareport:
+        try:
+            db_reportproject = ReportProject.objects.get(project_id=project_id)
+            project = {
+                    'full_name': "%s/%s" % (db_reportproject.group, db_reportproject.slug),
+                    'id': project_id,
+                    'name': db_reportproject.name,
+                    'slug': db_reportproject.slug,
+                    'is_archived': db_reportproject.is_archived,
+                    'is_public': db_reportproject.is_public,
+                  }
+
+            needs_fetch_latest = False
+        except ReportProject.DoesNotExist:
+            needs_fetch_latest = True
+
+    if force_fetch_from_qareport or needs_fetch_latest:
+        project =  qa_report_api.get_project(project_id)
+        db_reportproject = None
+
+    return (project, db_reportproject)
+
+
+def get_builds_from_database_or_qareport(project_id, db_reportproject, force_fetch_from_qareport=False):
+    needs_fetch_builds_from_qareport = False
+    builds = []
+    if not force_fetch_from_qareport and db_reportproject:
+        db_report_builds = ReportBuild.objects.filter(qa_project=db_reportproject).order_by('-qa_build_id')
+        if len(db_report_builds) > 0:
+            for db_report_build in db_report_builds:
+                build = {}
+                build['id'] = db_report_build.qa_build_id
+                build['version'] = db_report_build.version
+                build['metadata'] = db_report_build.metadata_url
+                build['created_at'] = db_report_build.started_at
+                builds.append(build)
+        else:
+            needs_fetch_builds_from_qareport = True
+
+    if force_fetch_from_qareport or needs_fetch_builds_from_qareport:
+        builds = qa_report_api.get_all_builds(project_id)
+
+    return builds
+
+
+def get_build_from_database_or_qareport(build_id, force_fetch_from_qareport=False):
+    needs_fetch_from_qareport = False
+    build = {}
+    db_report_build = None
+    if not force_fetch_from_qareport:
+        try:
+            db_report_build = ReportBuild.objects.get(qa_build_id=build_id)
+            build['id'] = db_report_build.qa_build_id
+            build['version'] = db_report_build.version
+            build['project'] = qa_report_api.get_project_api_url_with_project_id(db_report_build.qa_project.project_id)
+
+        except ReportBuild.DoesNotExist:
+            needs_fetch_from_qareport = True
+
+    if force_fetch_from_qareport or needs_fetch_from_qareport:
+        build = qa_report_api.get_build(build_id)
+
+    return (build, db_report_build)
+
+
 def get_jobs_for_build_from_db_or_qareport(build_id=None, force_fetch_from_qareport=False):
     needs_fetch_jobs = False
     if not force_fetch_from_qareport:
@@ -1109,6 +1177,7 @@ def get_jobs_for_build_from_db_or_qareport(build_id=None, force_fetch_from_qarep
                     job['id'] = db_report_job.qa_job_id
                     job['parent_job'] = db_report_job.parent_job
                     job['job_status'] = db_report_job.status
+                    job['environment'] = db_report_job.environment
                     job['target'] = qa_report_api.get_project_api_url_with_project_id(db_report_job.report_build.qa_project.project_id)
                     job['target_build'] = qa_report_api.get_build_api_url_with_build_id(db_report_job.report_build.qa_build_id)
                     job['submitted'] = True
@@ -1272,42 +1341,14 @@ def list_builds(request):
     fetch_latest_from_qa_report = request.GET.get('fetch_latest', "false").lower() == 'true'
 
     logger.info("Start for list_builds: %s" % project_id)
-    needs_fetch_builds_from_qareport = False
-    builds = []
-    try:
-        db_reportproject = ReportProject.objects.get(project_id=project_id)
-        project_full_name = "%s/%s" % (db_reportproject.group, db_reportproject.slug)
-        project = {
-                    'full_name': project_full_name,
-                    'id': project_id,
-                    'name': db_reportproject.name,
-                    }
-    except ReportProject.DoesNotExist:
-        project =  qa_report_api.get_project(project_id)
-        project_full_name = project.get('full_name')
-        needs_fetch_builds_from_qareport = True
-        db_reportproject = None
 
-    if not fetch_latest_from_qa_report and db_reportproject:
-        db_report_builds = ReportBuild.objects.filter(qa_project=db_reportproject).order_by('-qa_build_id')
-        if len(db_report_builds) > 0:
-            for db_report_build in db_report_builds:
-                build = {}
-                build['id'] = db_report_build.qa_build_id
-                build['version'] = db_report_build.version
-                build['metadata'] = db_report_build.metadata_url
-                build['created_at'] = db_report_build.started_at
-                builds.append(build)
-        else:
-            needs_fetch_builds_from_qareport = True
-
+    project, db_reportproject = get_project_from_database_or_qareport(project_id, force_fetch_from_qareport=fetch_latest_from_qa_report)
+    project_full_name = project.get('full_name')
     if not is_project_accessible(project_full_name=project_full_name, user=request.user):
         # the current user has no permission to access the project
-        return render(request, '401.html',
-                        status=401)
+        return render(request, '401.html', status=401)
 
-    if fetch_latest_from_qa_report or needs_fetch_builds_from_qareport:
-        builds = qa_report_api.get_all_builds(project_id)
+    builds = get_builds_from_database_or_qareport(project_id, db_reportproject, force_fetch_from_qareport=fetch_latest_from_qa_report)
 
     builds_result = []
     if project_full_name.find("android-lkft-benchmarks") < 0:
@@ -1477,19 +1518,22 @@ def list_all_jobs(request):
                             }
                 )
 
+
 def list_jobs(request):
     build_id = request.GET.get('build_id', None)
-    build =  qa_report_api.get_build(build_id)
-    project =  qa_report_api.get_project_with_url(build.get('project'))
-    jobs = qa_report_api.get_jobs_for_build(build_id)
+    fetch_latest_from_qa_report = request.GET.get('fetch_latest', "false").lower() == 'true'
 
-    if not is_project_accessible(project_full_name=project.get('full_name'), user=request.user):
+    build, db_report_build =  get_build_from_database_or_qareport(build_id, force_fetch_from_qareport=fetch_latest_from_qa_report)
+    project_id = build.get('project').strip('/').split('/')[-1]
+    project, db_reportproject = get_project_from_database_or_qareport(project_id, force_fetch_from_qareport=fetch_latest_from_qa_report)
+    project_full_name = project.get('full_name')
+    if not is_project_accessible(project_full_name=project_full_name, user=request.user):
         # the current user has no permission to access the project
-        return render(request, '401.html',
-                        status=401)
+        return render(request, '401.html', status=401)
 
     project_name = project.get('name')
 
+    jobs = get_jobs_for_build_from_db_or_qareport(build_id=build_id, force_fetch_from_qareport=fetch_latest_from_qa_report)
     classified_jobs = get_classified_jobs(jobs=jobs)
     jobs_to_be_checked = classified_jobs.get('final_jobs')
     resubmitted_duplicated_jobs = classified_jobs.get('resubmitted_or_duplicated_jobs')
