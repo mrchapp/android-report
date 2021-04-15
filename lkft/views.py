@@ -2665,13 +2665,13 @@ def list_projects_simple(request):
         if fetch_latest_from_qa_report:
             projects = qa_report_api.get_projects_with_group_id(group_id)
             for target_project in projects:
-                ReportProject.objects.update_or_create(
-                        project_id=target_project.get('id'),
-                        group=qa_report_api.get_project_group(target_project),
-                        name=target_project.get('name'),
-                        slug=target_project.get('slug'),
-                        is_public=target_project.get('is_public'),
-                        is_archived=target_project.get('is_archived'))
+                report_project = ReportProject.objects.get_or_create(project_id=target_project.get('id'))[0]
+                report_project.group = qa_report_api.get_project_group(target_project)
+                report_project.name = target_project.get('name')
+                report_project.slug = target_project.get('slug')
+                report_project.is_public = target_project.get('is_public')
+                report_project.is_archived = target_project.get('is_archived')
+                report_project.save()
         else:
             db_report_projects = ReportProject.objects.filter(group=group_name)
             for db_project in db_report_projects:
