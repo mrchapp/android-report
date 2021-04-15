@@ -69,6 +69,12 @@
         postgres=# ALTER ROLE lkftreport SET timezone TO 'UTC';
         postgres=# GRANT ALL PRIVILEGES ON DATABASE lkftproject TO lkftreport;
 
+    example with command line:
+        $ dropdb --if-exists lkftproject
+        $ createdb lkftproject
+        $ psql lkftproject < /tmp/db_lkftproject
+        $ psql -c 'GRANT ALL PRIVILEGES ON DATABASE lkftproject TO lkftreport;'
+
 4. cheatsheet
    \l or \list to show all database in postgressql
    \c dbname or \connect dbname to change to a new database
