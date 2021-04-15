@@ -2732,7 +2732,7 @@ def list_projects_simple(request):
 
     for group in groups:
         if group.get('projects'):
-            sorted_projects = sorted(group['projects'], key=get_project_name)
+            sorted_projects = sorted(group['projects'], key=get_project_name, reverse=True)
             group['projects'] = sorted_projects
         else:
             group['projects'] = []
