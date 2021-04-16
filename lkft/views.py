@@ -201,7 +201,7 @@ def download_attachments_save_result(jobs=[]):
         report_project.save()
 
     report_build, created = ReportBuild.objects.get_or_create(qa_build_id=target_build_id)
-    if created:
+    if created or report_build.metadata_url is None or not report_build.finished:
         target_build = qa_report_api.get_build(target_build_id)
         report_build.qa_project = report_project
         report_build.version = target_build.get('version')
@@ -1041,20 +1041,27 @@ def get_build_info(db_reportproject=None, build=None, fetch_latest_from_qa_repor
 
     jobs = get_jobs_for_build_from_db_or_qareport(build_id=build.get("id"), force_fetch_from_qareport=fetch_latest_from_qa_report)
 
-    if not fetch_latest_from_qa_report and db_report_build and db_report_build.status == 'JOBSCOMPLETED':
+    if not fetch_latest_from_qa_report and db_report_build and db_report_build.finished:
         build['created_at'] = db_report_build.started_at
         build['build_status'] = db_report_build.status
         build['last_fetched_timestamp'] = db_report_build.fetched_at
 
-        trigger_build_db = db_report_build.ci_trigger_build
-        if trigger_build_db:
-            trigger_build_url = jenkins_api.get_job_url(name=trigger_build_db.name, number=trigger_build_db.number)
+        db_trigger_build = db_report_build.ci_trigger_build
+        if not db_trigger_build:
+            trigger_build_url = jenkins_api.get_job_url(name=db_trigger_build.name, number=db_trigger_build.number)
             try:
                 trigger_build = jenkins_api.get_build_details_with_full_url(build_url=trigger_build_url)
             except UrlNotFoundException:
                 trigger_build = None
         else:
-            trigger_build = None
+            trigger_build = {
+                                'duration': 0,
+                                'name': db_trigger_build.name,
+                                'number': db_trigger_build.number,
+                                'url': jenkins_api.get_job_url(name=db_trigger_build.name, number=db_trigger_build.number),
+                                'displayName': db_trigger_build.display_name,
+                                'changes_num': db_trigger_build.changes_num,
+                                }
 
         # Need to cache the ci build information into result
         #build['trigger_build'] = {
@@ -1128,6 +1135,7 @@ def get_builds_from_database_or_qareport(project_id, db_reportproject, force_fet
                 build['version'] = db_report_build.version
                 build['metadata'] = db_report_build.metadata_url
                 build['created_at'] = db_report_build.started_at
+                build['finished'] = db_report_build.finished
                 builds.append(build)
         else:
             needs_fetch_builds_from_qareport = True
