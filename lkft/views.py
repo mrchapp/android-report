@@ -685,7 +685,9 @@ def get_trigger_url_from_db_report_build(db_report_build):
 def get_trigger_from_qareport_build(qareport_build):
     db_report_build, build_created = ReportBuild.objects.get_or_create(qa_build_id=qareport_build.get('id'))
     if not build_created:
-        if db_report_build.ci_trigger_build:
+        if db_report_build.ci_trigger_build and \
+                db_report_build.ci_trigger_build.changes_num != 0 and \
+                db_report_build.ci_trigger_build.display_name is not None :
             ci_trigger_build = {}
             ci_trigger_build['name'] = db_report_build.ci_trigger_build.name
             ci_trigger_build['number'] = db_report_build.ci_trigger_build.number
@@ -756,12 +758,16 @@ def get_trigger_from_qareport_build(qareport_build):
     except UrlNotFoundException:
         db_ci_build.result = 'CI_BUILD_DELETED'
         db_ci_build.duration = datetime.timedelta(milliseconds=0).total_seconds()
+        db_ci_build.display_name = "CI_BUILD_DELETED"
+        db_ci_build.save()
         ci_build = None
-
 
     if ci_build:
         try:
             trigger_ci_build = jenkins_api.get_final_trigger_from_ci_build(ci_build)
+            if trigger_ci_build is None:
+                # the build might be deleted already
+                return None
             trigger_ci_build_url = trigger_ci_build.get('url')
             trigger_ci_build_number = trigger_ci_build_url.strip('/').split('/')[-1]
             trigger_ci_build_name = trigger_ci_build_url.strip('/').split('/')[-2]
@@ -1042,38 +1048,11 @@ def get_build_info(db_reportproject=None, build=None, fetch_latest_from_qa_repor
     jobs = get_jobs_for_build_from_db_or_qareport(build_id=build.get("id"), force_fetch_from_qareport=fetch_latest_from_qa_report)
 
     if not fetch_latest_from_qa_report and db_report_build and db_report_build.finished:
-        build['created_at'] = db_report_build.started_at
-        build['build_status'] = db_report_build.status
-        build['last_fetched_timestamp'] = db_report_build.fetched_at
-
-        db_trigger_build = db_report_build.ci_trigger_build
-        if not db_trigger_build:
-            trigger_build_url = jenkins_api.get_job_url(name=db_trigger_build.name, number=db_trigger_build.number)
-            try:
-                trigger_build = jenkins_api.get_build_details_with_full_url(build_url=trigger_build_url)
-            except UrlNotFoundException:
-                trigger_build = None
-        else:
-            trigger_build = {
-                                'duration': 0,
-                                'name': db_trigger_build.name,
-                                'number': db_trigger_build.number,
-                                'url': jenkins_api.get_job_url(name=db_trigger_build.name, number=db_trigger_build.number),
-                                'displayName': db_trigger_build.display_name,
-                                'changes_num': db_trigger_build.changes_num,
-                                }
-
-        # Need to cache the ci build information into result
-        #build['trigger_build'] = {
-        #    'name': trigger_build.name,
-        #    'url':  jenkins_api.get_job_url(name=trigger_build.name, number=trigger_build.number),
-        #    'displayName': "{}-{}".format(trigger_build.number, db_report_build.get('version')),
-        #    'start_timestamp': trigger_build.timestamp,
-        #    'changes_num': '-',
-        #}
+        build.update(get_build_from_database(db_report_build))
     else:
         build['created_at'] = qa_report_api.get_aware_datetime_from_str(build.get('created_at'))
-        trigger_build = get_trigger_from_qareport_build(build)
+
+    trigger_build = get_trigger_from_qareport_build(build)
 
     get_lkft_build_status(build, jobs)
     build['numbers'] = get_test_result_number_for_build(build, jobs)
@@ -1130,13 +1109,12 @@ def get_builds_from_database_or_qareport(project_id, db_reportproject, force_fet
         db_report_builds = ReportBuild.objects.filter(qa_project=db_reportproject).order_by('-qa_build_id')
         if len(db_report_builds) > 0:
             for db_report_build in db_report_builds:
-                build = {}
-                build['id'] = db_report_build.qa_build_id
-                build['version'] = db_report_build.version
-                build['metadata'] = db_report_build.metadata_url
-                build['created_at'] = db_report_build.started_at
-                build['finished'] = db_report_build.finished
-                builds.append(build)
+                build = get_build_from_database(db_report_build)
+                if not db_report_build.finished:
+                    needs_fetch_builds_from_qareport = True
+                    break
+                else:
+                    builds.append(build)
         else:
             needs_fetch_builds_from_qareport = True
 
@@ -1145,6 +1123,18 @@ def get_builds_from_database_or_qareport(project_id, db_reportproject, force_fet
 
     return builds
 
+def get_build_from_database(db_report_build):
+    build = {}
+    build['id'] = db_report_build.qa_build_id
+    build['version'] = db_report_build.version
+    build['project'] = qa_report_api.get_project_api_url_with_project_id(db_report_build.qa_project.project_id)
+    build['created_at'] = db_report_build.started_at
+    build['build_status'] = db_report_build.status
+    build['last_fetched_timestamp'] = db_report_build.fetched_at
+    build['metadata'] = db_report_build.metadata_url
+    build['finished'] = db_report_build.finished
+
+    return build
 
 def get_build_from_database_or_qareport(build_id, force_fetch_from_qareport=False):
     needs_fetch_from_qareport = False
@@ -1153,10 +1143,7 @@ def get_build_from_database_or_qareport(build_id, force_fetch_from_qareport=Fals
     if not force_fetch_from_qareport:
         try:
             db_report_build = ReportBuild.objects.get(qa_build_id=build_id)
-            build['id'] = db_report_build.qa_build_id
-            build['version'] = db_report_build.version
-            build['project'] = qa_report_api.get_project_api_url_with_project_id(db_report_build.qa_project.project_id)
-
+            build = get_build_from_database(db_report_build)
         except ReportBuild.DoesNotExist:
             needs_fetch_from_qareport = True
 

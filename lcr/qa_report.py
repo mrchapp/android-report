@@ -181,7 +181,7 @@ class JenkinsApi(RESTFullApi):
                 new_trigger_build = self.get_build_details_with_full_url(trigger_url)
                 return self.get_final_trigger_from_ci_build(new_trigger_build)
             except UrlNotFoundException:
-                logger.info("build job url is not found:{}".format(build_url))
+                logger.info("build job url is not found: {}".format(trigger_url))
                 return None
         else:
             return jenkins_build
