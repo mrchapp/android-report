@@ -138,7 +138,7 @@ def get_attachment_urls(jobs=[]):
 
     first_job = jobs[0]
     target_build_id = first_job.get('target_build').strip('/').split('/')[-1]
-    db_report_build = ReportBuild.objects.get(qa_build_id=target_build_id)
+    db_report_build = get_build_from_database_or_qareport(target_build_id)[1]
     target_build_metadata = qa_report_api.get_build_meta_with_url(db_report_build.metadata_url)
 
     for job in jobs:
@@ -183,86 +183,24 @@ def get_result_file_path(job=None):
     result_file_path = os.path.join(DIR_ATTACHMENTS, "%s-%s.zip" % (lava_nick, job_id))
     return result_file_path
 
+
 def download_attachments_save_result(jobs=[]):
     if len(jobs) == 0:
         return
-    first_job = jobs[0]
-    target_project_id = first_job.get('target').strip('/').split('/')[-1]
-    target_build_id = first_job.get('target_build').strip('/').split('/')[-1]
-
-    report_project, created = ReportProject.objects.get_or_create(project_id=target_project_id)
-    if created:
-        target_project = qa_report_api.get_project(target_project_id)
-        report_project.group = qa_report_api.get_project_group(target_project),
-        report_project.name = target_project.get('name')
-        report_project.slug = target_project.get('slug')
-        report_project.is_archived = target_project.get('is_archived')
-        report_project.is_public = target_project.get('is_public')
-        report_project.save()
-
-    report_build, created = ReportBuild.objects.get_or_create(qa_build_id=target_build_id)
-    if created or report_build.metadata_url is None or not report_build.finished:
-        target_build = qa_report_api.get_build(target_build_id)
-        report_build.qa_project = report_project
-        report_build.version = target_build.get('version')
-        report_build.metadata_url = target_build.get('metadata')
-        report_build.started_at = target_build.get('created_at')
-        report_build.finished = target_build.get('finished')
-        report_build.save()
 
     # https://lkft.validation.linaro.org/scheduler/job/566144
     get_attachment_urls(jobs=jobs)
     for job in jobs:
         # cache all the jobs, otherwise the status is not correct for the build
         # if incomplete jobs are not cached.
-        report_job, created = ReportJob.objects.get_or_create(job_url=job.get('external_url'))
-        if not created:
-            if report_job.report_build is None:
-                report_job.report_build = report_build
-                report_job.save()
-            if report_job.results_cached:
-                continue
-        else:
-            report_job.job_name = job.get('name')
-            report_job.qa_job_id = job.get('id')
-            report_job.report_build = report_build
-            report_job.attachment_url = job.get('attachment_url')
-            report_job.parent_job = job.get('parent_job')
-            report_job.environment = job.get('environment')
-            report_job.status = job.get('job_status') # all possible status: Submitted, Running, Complete, Incomplete, Canceled
-
-            if job.get('submitted_at'):
-                submitted_at = qa_report_api.get_aware_datetime_from_str(job.get('submitted_at'))
-            elif job.get('created_at'):
-                submitted_at = qa_report_api.get_aware_datetime_from_str(job.get('created_at'))
-            else:
-                submitted_at = None
-
-            if job.get('fetched_at'):
-                fetched_at = qa_report_api.get_aware_datetime_from_str(job.get('fetched_at'))
-            else:
-                fetched_at = None
-
-            report_job.fetched_at = fetched_at
-            report_job.submitted_at = submitted_at
-            report_job.save()
+        report_job = cache_qajob_to_database(job)
+        if report_job.results_cached:
+            continue
 
         if not job.get('lava_config'):
             continue
 
-        # For cases that fields changed but the record is there already
-        # The following items might be changed after job status changed, like from Running to Complete
-        report_job.status = job.get('job_status') # must be Complete here
-        report_job.attachment_url = job.get('attachment_url')
-        report_job.parent_job = job.get('parent_job')
-        if job.get('fetched_at'):
-            fetched_at = qa_report_api.get_aware_datetime_from_str(job.get('fetched_at'))
-        else:
-            fetched_at = None
-
-        report_job.fetched_at = fetched_at
         if job.get('job_status') != 'Complete':
-            report_job.save()
             continue
 
         if is_benchmark_job(job.get('name')):
@@ -306,7 +244,6 @@ def download_attachments_save_result(jobs=[]):
                                             suite=test.get("suite"),
                                             lava_nick=lava_config.get('nick'),
                                             job_id=job_id)
-
 
 
         elif is_cts_vts_job(job.get('name')):
@@ -599,7 +536,7 @@ def get_test_result_number_for_build(build, jobs=None):
     test_numbers = qa_report.TestNumbers()
 
     if not jobs:
-        jobs = qa_report_api.get_jobs_for_build(build.get("id"))
+        jobs = get_jobs_for_build_from_db_or_qareport(build_id=build.get("id"), force_fetch_from_qareport=true)
 
     jobs_to_be_checked = get_classified_jobs(jobs=jobs).get('final_jobs')
     download_attachments_save_result(jobs=jobs_to_be_checked)
@@ -631,7 +568,7 @@ def get_test_result_number_for_build(build, jobs=None):
 
 def get_lkft_build_status(build, jobs):
     if not jobs:
-        jobs = qa_report_api.get_jobs_for_build(build.get("id"))
+        jobs = get_jobs_for_build_from_db_or_qareport(build_id=build.get("id"), force_fetch_from_qareport=true)
 
     jobs_to_be_checked = get_classified_jobs(jobs=jobs).get('final_jobs')
     if isinstance(build.get('created_at'), str):
@@ -683,41 +620,20 @@ def get_trigger_url_from_db_report_build(db_report_build):
 
 
 def get_trigger_from_qareport_build(qareport_build):
-    db_report_build, build_created = ReportBuild.objects.get_or_create(qa_build_id=qareport_build.get('id'))
-    if not build_created:
-        if db_report_build.ci_trigger_build and \
-                db_report_build.ci_trigger_build.changes_num != 0 and \
-                db_report_build.ci_trigger_build.display_name is not None :
-            ci_trigger_build = {}
-            ci_trigger_build['name'] = db_report_build.ci_trigger_build.name
-            ci_trigger_build['number'] = db_report_build.ci_trigger_build.number
-            ci_trigger_build['duration'] = db_report_build.ci_trigger_build.duration
-            ci_trigger_build['result'] = db_report_build.ci_trigger_build.result
-            ci_trigger_build['start_timestamp'] = db_report_build.ci_trigger_build.timestamp
-            ci_trigger_build['displayName'] = db_report_build.ci_trigger_build.display_name
-            ci_trigger_build['changes_num'] = db_report_build.ci_trigger_build.changes_num
-            ci_trigger_build['url'] = jenkins_api.get_job_url(name=db_report_build.ci_trigger_build.name, number=db_report_build.ci_trigger_build.number)
-
-            return ci_trigger_build
-    else:
-        target_project_id = qareport_build.get('project').strip('/').split('/')[-1]
-        db_report_project, project_created = ReportProject.objects.get_or_create(project_id=target_project_id)
-        if project_created:
-            target_project = qa_report_api.get_project(target_project_id)
-            db_report_project.group = qa_report_api.get_project_group(target_project)
-            db_report_project.name = target_project.get('name')
-            db_report_project.slug = target_project.get('slug')
-            db_report_project.is_public = target_project.get('is_public')
-            db_report_project.save()
-
-        db_report_build.qa_project = db_report_project
-        db_report_build.version = qareport_build.get('version')
-        db_report_build.metadata_url = qareport_build.get('metadata')
-        db_report_build.started_at = qareport_build.get('created_at')
-        db_report_build.fetched_at = qareport_build.get('last_fetched_timestamp')
-        db_report_build.finished = qareport_build.get('finished')
-        db_report_build.status = qareport_build.get('build_status')
-        db_report_build.save()
+    db_report_build = get_build_from_database_or_qareport(qareport_build.get('id'))[1]
+    if db_report_build.ci_trigger_build and \
+            db_report_build.ci_trigger_build.changes_num != 0 and \
+            db_report_build.ci_trigger_build.display_name is not None :
+        ci_trigger_build = {}
+        ci_trigger_build['name'] = db_report_build.ci_trigger_build.name
+        ci_trigger_build['number'] = db_report_build.ci_trigger_build.number
+        ci_trigger_build['duration'] = db_report_build.ci_trigger_build.duration
+        ci_trigger_build['result'] = db_report_build.ci_trigger_build.result
+        ci_trigger_build['start_timestamp'] = db_report_build.ci_trigger_build.timestamp
+        ci_trigger_build['displayName'] = db_report_build.ci_trigger_build.display_name
+        ci_trigger_build['changes_num'] = db_report_build.ci_trigger_build.changes_num
+        ci_trigger_build['url'] = jenkins_api.get_job_url(name=db_report_build.ci_trigger_build.name, number=db_report_build.ci_trigger_build.number)
+        return ci_trigger_build
 
     build_meta = qa_report_api.get_build_meta_with_url(qareport_build.get('metadata'))
     if not build_meta:
@@ -826,7 +742,7 @@ def get_project_info(project):
             db_report_build = None
 
         last_build['created_at'] = qa_report_api.get_aware_datetime_from_str(last_build.get('created_at'))
-        jobs = qa_report_api.get_jobs_for_build(last_build.get("id"))
+        jobs = get_jobs_for_build_from_db_or_qareport(build_id=last_build.get("id"), force_fetch_from_qareport=true)
         last_build['numbers_of_result'] = get_test_result_number_for_build(last_build, jobs)
         build_status = get_lkft_build_status(last_build, jobs)
         project['last_build'] = last_build
@@ -1077,29 +993,98 @@ def get_build_info(db_reportproject=None, build=None, fetch_latest_from_qa_repor
     return build
 
 
+
+def cache_qaproject_to_database(target_project):
+    db_report_project = ReportProject.objects.get_or_create(project_id=target_project.get('id'))[0]
+    db_report_project.group = qa_report_api.get_project_group(target_project)
+    db_report_project.name = target_project.get('name')
+    db_report_project.slug = target_project.get('slug')
+    db_report_project.is_public = target_project.get('is_public')
+    db_report_project.is_archived = target_project.get('is_archived')
+    db_report_project.save()
+
+    return db_report_project
+
+
+def cache_qabuild_to_databas(qareport_build):
+    db_report_build, created = ReportBuild.objects.get_or_create(qa_build_id=qareport_build.get('id'))
+    if created or db_report_build.metadata_url is None or not db_report_build.finished:
+        db_report_build.version = qareport_build.get('version')
+        db_report_build.metadata_url = qareport_build.get('metadata')
+        db_report_build.started_at = qareport_build.get('created_at')
+        db_report_build.finished = qareport_build.get('finished')
+        if qareport_build.get('last_fetched_timestamp'):
+            db_report_build.fetched_at = qareport_build.get('last_fetched_timestamp')
+
+        if db_report_build.qa_project is None:
+            target_project_id = qareport_build.get('project').strip('/').split('/')[-1]
+            db_report_project = get_project_from_database_or_qareport(target_project_id)[1]
+            db_report_build.qa_project = db_report_project
+
+        if qareport_build.get('build_status'):
+            db_report_build.status = qareport_build.get('build_status')
+
+        db_report_build.save()
+    return db_report_build
+
+
+def cache_qajob_to_database(job):
+    report_job = ReportJob.objects.get_or_create(job_url=job.get('external_url'))[0]
+
+    report_job.job_name = job.get('name')
+    report_job.qa_job_id = job.get('id')
+    report_job.attachment_url = job.get('attachment_url')
+    report_job.parent_job = job.get('parent_job')
+    report_job.environment = job.get('environment')
+    report_job.status = job.get('job_status') # all possible status: Submitted, Running, Complete, Incomplete, Canceled
+    if report_job.failure_msg is None and job.get('failure') and job.get('failure').get('error_msg'):
+        report_job.failure_msg = job.get('failure').get('error_msg')
+
+    if report_job.submitted_at is None:
+        if job.get('submitted_at'):
+            submitted_at = qa_report_api.get_aware_datetime_from_str(job.get('submitted_at'))
+            report_job.submitted_at = submitted_at
+        elif job.get('created_at'):
+            submitted_at = qa_report_api.get_aware_datetime_from_str(job.get('created_at'))
+            report_job.submitted_at = submitted_at
+        else:
+            # something is wrong here without neither submitted_at nor created_at
+            pass
+
+    if report_job.fetched_at is None and job.get('fetched_at'):
+        fetched_at = qa_report_api.get_aware_datetime_from_str(job.get('fetched_at'))
+        report_job.fetched_at = fetched_at
+
+    if report_job.report_build is None:
+        target_build_id = job.get('target_build').strip('/').split('/')[-1]
+        db_report_build =  get_build_from_database_or_qareport(target_build_id)[1]
+        report_job.report_build = db_report_build
+
+    report_job.save()
+
+    return report_job
+
+
 def get_project_from_database_or_qareport(project_id, force_fetch_from_qareport=False):
-    needs_fetch_latest = False
-    if not force_fetch_from_qareport:
-        try:
-            db_reportproject = ReportProject.objects.get(project_id=project_id)
-            project = {
-                    'full_name': "%s/%s" % (db_reportproject.group, db_reportproject.slug),
-                    'id': project_id,
-                    'name': db_reportproject.name,
-                    'slug': db_reportproject.slug,
-                    'is_archived': db_reportproject.is_archived,
-                    'is_public': db_reportproject.is_public,
-                  }
-
-            needs_fetch_latest = False
-        except ReportProject.DoesNotExist:
-            needs_fetch_latest = True
-
-    if force_fetch_from_qareport or needs_fetch_latest:
-        project =  qa_report_api.get_project(project_id)
+    try:
+        db_reportproject = ReportProject.objects.get(project_id=project_id)
+    except ReportProject.DoesNotExist:
         db_reportproject = None
 
-    return (project, db_reportproject)
+    if not force_fetch_from_qareport and db_reportproject is not None:
+        target_project = {
+                'full_name': "%s/%s" % (db_reportproject.group, db_reportproject.slug),
+                'id': project_id,
+                'name': db_reportproject.name,
+                'slug': db_reportproject.slug,
+                'is_archived': db_reportproject.is_archived,
+                'is_public': db_reportproject.is_public,
+              }
+    else:
+        target_project =  qa_report_api.get_project(project_id)
+        db_report_project = cache_qaproject_to_database(target_project)
+
+    return (target_project, db_reportproject)
 
 
 def get_builds_from_database_or_qareport(project_id, db_reportproject, force_fetch_from_qareport=False):
@@ -1110,18 +1095,21 @@ def get_builds_from_database_or_qareport(project_id, db_reportproject, force_fet
         if len(db_report_builds) > 0:
             for db_report_build in db_report_builds:
                 build = get_build_from_database(db_report_build)
-                if not db_report_build.finished:
-                    needs_fetch_builds_from_qareport = True
-                    break
-                else:
-                    builds.append(build)
+                # if not db_report_build.finished:
+                #     needs_fetch_builds_from_qareport = True
+                #     break
+                # else:
+                builds.append(build)
         else:
             needs_fetch_builds_from_qareport = True
 
     if force_fetch_from_qareport or needs_fetch_builds_from_qareport:
         builds = qa_report_api.get_all_builds(project_id)
+        for build in builds:
+            cache_qabuild_to_databas(build)
 
     return builds
+
 
 def get_build_from_database(db_report_build):
     build = {}
@@ -1136,65 +1124,73 @@ def get_build_from_database(db_report_build):
 
     return build
 
+
 def get_build_from_database_or_qareport(build_id, force_fetch_from_qareport=False):
-    needs_fetch_from_qareport = False
-    build = {}
-    db_report_build = None
-    if not force_fetch_from_qareport:
-        try:
-            db_report_build = ReportBuild.objects.get(qa_build_id=build_id)
-            build = get_build_from_database(db_report_build)
-        except ReportBuild.DoesNotExist:
-            needs_fetch_from_qareport = True
+    qareport_build = {}
+    try:
+        db_report_build = ReportBuild.objects.get(qa_build_id=build_id)
+    except ReportBuild.DoesNotExist:
+        db_report_build = None
 
-    if force_fetch_from_qareport or needs_fetch_from_qareport:
-        build = qa_report_api.get_build(build_id)
+    if not force_fetch_from_qareport and \
+            db_report_build is not None and \
+            db_report_build.metadata_url is not None and \
+            db_report_build.qa_project is not None :
+        qareport_build = get_build_from_database(db_report_build)
+    else:
+        qareport_build = qa_report_api.get_build(build_id)
+        db_report_build = cache_qabuild_to_databas(qareport_build)
 
-    return (build, db_report_build)
+    return (qareport_build, db_report_build)
 
 
 def get_jobs_for_build_from_db_or_qareport(build_id=None, force_fetch_from_qareport=False):
     needs_fetch_jobs = False
-    if not force_fetch_from_qareport:
-        jobs = []
-        try:
-            db_report_build = ReportBuild.objects.get(qa_build_id=build_id)
-            db_report_jobs = ReportJob.objects.filter(report_build=db_report_build)
-            if len(db_report_jobs) == 0:
-                logger.info("No jobs found for build: %s", build_id)
-                needs_fetch_jobs = True
-            else:
-                for db_report_job in db_report_jobs:
-                    job = {}
-                    job['external_url'] = db_report_job.job_url
-                    job['name'] = db_report_job.job_name
-                    job['attachment_url'] = db_report_job.attachment_url
-                    job['id'] = db_report_job.qa_job_id
-                    job['parent_job'] = db_report_job.parent_job
-                    job['job_status'] = db_report_job.status
-                    job['environment'] = db_report_job.environment
-                    job['target'] = qa_report_api.get_project_api_url_with_project_id(db_report_job.report_build.qa_project.project_id)
-                    job['target_build'] = qa_report_api.get_build_api_url_with_build_id(db_report_job.report_build.qa_build_id)
-                    job['submitted'] = True
-                    job['submitted_at'] = db_report_job.submitted_at
-                    if db_report_job.fetched_at:
-                        job['fetched'] = True
-                        job['fetched_at'] = db_report_job.fetched_at
 
-                    job['job_id'] = qa_report_api.get_qa_job_id_with_url(db_report_job.job_url)
-                    lava_config = find_lava_config(db_report_job.job_url)
-                    if lava_config:
-                        job['lava_config'] = lava_config
+    try:
+        db_report_build = ReportBuild.objects.get(qa_build_id=build_id)
+    except ReportBuild.DoesNotExist:
+        needs_fetch_jobs = True
+        db_report_build = None
 
-                    jobs.append(job)
-        except ReportBuild.DoesNotExist:
+    jobs = []
+    if not force_fetch_from_qareport and db_report_build is not None :
+        db_report_jobs = ReportJob.objects.filter(report_build=db_report_build)
+        if len(db_report_jobs) == 0:
+            logger.info("No jobs found for build: %s", build_id)
             needs_fetch_jobs = True
-            db_report_build = None
+        else:
+            for db_report_job in db_report_jobs:
+                job = {}
+                job['external_url'] = db_report_job.job_url
+                job['name'] = db_report_job.job_name
+                job['attachment_url'] = db_report_job.attachment_url
+                job['id'] = db_report_job.qa_job_id
+                job['parent_job'] = db_report_job.parent_job
+                job['job_status'] = db_report_job.status
+                job['environment'] = db_report_job.environment
+                job['target'] = qa_report_api.get_project_api_url_with_project_id(db_report_job.report_build.qa_project.project_id)
+                job['target_build'] = qa_report_api.get_build_api_url_with_build_id(db_report_job.report_build.qa_build_id)
+                job['submitted'] = True
+                job['submitted_at'] = db_report_job.submitted_at
+                if db_report_job.fetched_at:
+                    job['fetched'] = True
+                    job['fetched_at'] = db_report_job.fetched_at
+
+                job['job_id'] = qa_report_api.get_qa_job_id_with_url(db_report_job.job_url)
+                lava_config = find_lava_config(db_report_job.job_url)
+                if lava_config:
+                    job['lava_config'] = lava_config
+
+                if db_report_job.failure_msg:
+                    job['failure'] = {'error_msg': db_report_job.failure_msg}
+                jobs.append(job)
 
     if force_fetch_from_qareport or needs_fetch_jobs:
-        logger.info("Try to get jobs for build from qareport: %s force_fetch_from_qareport=%s, needs_fetch_jobs=%s", build_id, force_fetch_from_qareport, needs_fetch_jobs)
         jobs = qa_report_api.get_jobs_for_build(build_id)
-        logger.info("Finsihed getting jobs for build from qareport: %s force_fetch_from_qareport=%s, needs_fetch_jobs=%s", build_id, force_fetch_from_qareport, needs_fetch_jobs)
+        get_attachment_urls(jobs)
+        for job in jobs:
+            cache_qajob_to_database(job)
 
     return jobs
 
@@ -1343,8 +1339,10 @@ def list_builds(request):
         # the current user has no permission to access the project
         return render(request, '401.html', status=401)
 
+    logger.info("Start for list_builds before get_builds_from_database_or_qareport: %s" % project_id)
     builds = get_builds_from_database_or_qareport(project_id, db_reportproject, force_fetch_from_qareport=fetch_latest_from_qa_report)
 
+    logger.info("Start for list_builds before loop of get_build_info: %s" % project_id)
     builds_result = []
     if project_full_name.find("android-lkft-benchmarks") < 0:
         for build in builds[:BUILD_WITH_JOBS_NUMBER]:
@@ -1436,7 +1434,7 @@ def get_project_jobs(project):
     builds = qa_report_api.get_all_builds(project.get('id'), only_first=True)
     if len(builds) > 0:
         last_build = builds[0]
-        jobs = qa_report_api.get_jobs_for_build(last_build.get("id"))
+        jobs = get_jobs_for_build_from_db_or_qareport(build_id=last_build.get("id"), force_fetch_from_qareport=true)
         classified_jobs = get_classified_jobs(jobs=jobs)
 
         for job in classified_jobs.get('final_jobs'):
@@ -1674,6 +1672,7 @@ def list_jobs(request):
                                 'project': project,
                                 'bugzilla_show_bug_prefix': bugzilla_show_bug_prefix,
                                 'benchmarks_res': benchmarks_res,
+                                'fetch_latest': fetch_latest_from_qa_report,
                             }
                 )
 
@@ -1919,7 +1918,7 @@ def resubmit_job(request):
     build_url = qa_job.get('target_build')
     build_id = build_url.strip('/').split('/')[-1]
 
-    jobs = qa_report_api.get_jobs_for_build(build_id)
+    jobs = get_jobs_for_build_from_db_or_qareport(build_id=build_id, force_fetch_from_qareport=true)
     parent_job_urls = []
     for job in jobs:
         parent_job_url = job.get('parent_job')
@@ -1962,7 +1961,7 @@ def resubmit_job(request):
 
     # assuming all the jobs are belong to the same build
 
-    jobs = qa_report_api.get_jobs_for_build(build_id)
+    jobs = get_jobs_for_build_from_db_or_qareport(build_id=build_id, force_fetch_from_qareport=true)
     old_jobs = {}
     created_jobs = {}
     for job in jobs:
@@ -2048,7 +2047,7 @@ def cancel_job(request, qa_job_id):
 @login_required
 @permission_required('lkft.admin_projects')
 def cancel_build(request, qa_build_id):
-    qa_jobs = qa_report_api.get_jobs_for_build(qa_build_id)
+    qa_jobs = get_jobs_for_build_from_db_or_qareport(build_id=qa_build_id, force_fetch_from_qareport=true)
     for qa_job in qa_jobs:
         if qa_job.get('job_status') != 'Submitted' \
                 and qa_job.get('job_status') != 'Running':
@@ -2342,7 +2341,7 @@ def get_kernel_changes_info(db_kernelchanges=[]):
                 target_qareport_build['project_slug'] = target_qareport_project.get('slug')
                 target_qareport_build['project_id'] = target_qareport_project.get('id')
 
-                jobs = qa_report_api.get_jobs_for_build(target_qareport_build.get("id"))
+                jobs = get_jobs_for_build_from_db_or_qareport(build_id=target_qareport_build.get("id"), force_fetch_from_qareport=true)
                 classified_jobs = get_classified_jobs(jobs=jobs)
                 final_jobs = classified_jobs.get('final_jobs')
                 resubmitted_or_duplicated_jobs = classified_jobs.get('resubmitted_or_duplicated_jobs')
@@ -2660,13 +2659,7 @@ def list_projects_simple(request):
         if fetch_latest_from_qa_report:
             projects = qa_report_api.get_projects_with_group_id(group_id)
             for target_project in projects:
-                report_project = ReportProject.objects.get_or_create(project_id=target_project.get('id'))[0]
-                report_project.group = qa_report_api.get_project_group(target_project)
-                report_project.name = target_project.get('name')
-                report_project.slug = target_project.get('slug')
-                report_project.is_public = target_project.get('is_public')
-                report_project.is_archived = target_project.get('is_archived')
-                report_project.save()
+                cache_qaproject_to_database(target_project)
         else:
             db_report_projects = ReportProject.objects.filter(group=group_name)
             for db_project in db_report_projects:
