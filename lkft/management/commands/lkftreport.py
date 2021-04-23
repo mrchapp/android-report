@@ -156,20 +156,13 @@ class Command(BaseCommand):
             # Try to cache Trigger build information to database
             logger.info("%s %s %s" % (kernel_change.branch, kernel_change.describe, status))
 
-            try:
-                trigger_dbci_build = CiBuild.objects.get(name=trigger_build.get('name'), kernel_change=kernel_change)
-                trigger_dbci_build.duration = trigger_build.get('duration').total_seconds()
-                trigger_dbci_build.timestamp = trigger_build.get('start_timestamp')
-                trigger_dbci_build.result = trigger_build.get('status')
-                trigger_dbci_build.save()
-            except CiBuild.DoesNotExist:
-                CiBuild.objects.create(name=trigger_build.get('name'),
-                                        number=trigger_build.get('number'),
-                                        kernel_change=kernel_change,
-                                        duration=trigger_build.get('duration').total_seconds(),
-                                        timestamp=trigger_build.get('start_timestamp'),
-                                        result=trigger_build.get('status'))
-
+            trigger_dbci_build = CiBuild.objects.get_or_create(name=trigger_build.get('name'), number=trigger_build.get('number'))[0]
+            if trigger_dbci_build.kernel_change is None:
+                trigger_dbci_build.kernel_change = kernel_change
+            trigger_dbci_build.duration = trigger_build.get('duration').total_seconds()
+            trigger_dbci_build.timestamp = trigger_build.get('start_timestamp')
+            trigger_dbci_build.result = trigger_build.get('status')
+            trigger_dbci_build.save()
 
             # Try to cache CI build information to database
             jenkins_ci_builds = kernel_change_report.get('jenkins_ci_builds')
@@ -209,61 +202,39 @@ class Command(BaseCommand):
 
                 trigger_dbci_build = CiBuild.objects.get(name=trigger_build.get('name'), number=trigger_build.get('number'))
 
-                qa_project_group = qareport_build.get('project_group')
-                qa_project_name = qareport_build.get('project_name')
-                qa_project_slug = qareport_build.get('project_slug')
-                qa_project_id = qareport_build.get('project_id')
-                try:
-                    qa_project = ReportProject.objects.get(group=qa_project_group, name=qa_project_name)
-                except ReportProject.DoesNotExist:
-                    qa_project = ReportProject.objects.create(group=qa_project_group,
-                                                name=qa_project_name,
-                                                slug=qa_project_slug,
-                                                project_id=qa_project_id)
+                # save qareport project to database
+                qa_project, created = ReportProject.objects.get_or_create(project_id=qareport_build.get('project_id'))
+                if created:
+                    qa_project.group = qareport_build.get('project_group')
+                    qa_project.name = qareport_build.get('project_name')
+                    qa_project.slug = qareport_build.get('project_slug')
+                    qa_project.save()
 
-                try:
-                    report_build = ReportBuild.objects.get(qa_project=qa_project,
-                                                            version=kernel_change.describe)
-                    report_build.kernel_change = kernel_change
-                    report_build.ci_build = dbci_build
-                    report_build.ci_trigger_build = trigger_dbci_build
-                    report_build.number_passed = result_numbers.get('number_passed')
-                    report_build.number_failed = result_numbers.get('number_failed')
-                    report_build.number_assumption_failure = result_numbers.get('number_assumption_failure')
-                    report_build.number_ignored = result_numbers.get('number_ignored')
-                    report_build.number_total = result_numbers.get('number_total')
-                    report_build.modules_done = result_numbers.get('modules_done')
-                    report_build.modules_total = result_numbers.get('modules_total')
-                    report_build.jobs_finished = result_numbers.get('jobs_finished')
-                    report_build.jobs_total = result_numbers.get('jobs_total')
-                    report_build.started_at = trigger_build.get('start_timestamp')
-                    report_build.fetched_at = qareport_build.get('last_fetched_timestamp')
-                    report_build.qa_build_id = qareport_build.get('id')
-                    report_build.status = qareport_build.get('build_status')
-                    report_build.save()
-                except ReportBuild.DoesNotExist:
-                    report_build = ReportBuild.objects.create(qa_project=qa_project,
-                                        version=kernel_change.describe,
-                                        kernel_change=kernel_change,
-                                        ci_build=dbci_build,
-                                        ci_trigger_build=trigger_dbci_build,
-                                        number_passed=result_numbers.get('number_passed'),
-                                        number_failed=result_numbers.get('number_failed'),
-                                        number_assumption_failure=result_numbers.get('number_assumption_failure'),
-                                        number_ignored=result_numbers.get('number_ignored'),
-                                        number_total=result_numbers.get('number_total'),
-                                        modules_done=result_numbers.get('modules_done'),
-                                        modules_total=result_numbers.get('modules_total'),
-                                        jobs_finished=result_numbers.get('jobs_finished'),
-                                        jobs_total=result_numbers.get('jobs_total'),
-                                        started_at=trigger_build.get('start_timestamp'),
-                                        fetched_at=qareport_build.get('last_fetched_timestamp'),
-                                        status=qareport_build.get('build_status'),
-                                        qa_build_id=qareport_build.get('id'))
+                # save qareport build to database
+                report_build = ReportBuild.objects.get_or_create(qa_build_id=qareport_build.get('id'))[0]
+                report_build.qa_project = qa_project
+                report_build.version = kernel_change.describe
+                report_build.kernel_change = kernel_change
+                report_build.ci_build = dbci_build
+                report_build.ci_trigger_build = trigger_dbci_build
+                report_build.number_passed = result_numbers.get('number_passed')
+                report_build.number_failed = result_numbers.get('number_failed')
+                report_build.number_assumption_failure = result_numbers.get('number_assumption_failure')
+                report_build.number_ignored = result_numbers.get('number_ignored')
+                report_build.number_total = result_numbers.get('number_total')
+                report_build.modules_done = result_numbers.get('modules_done')
+                report_build.modules_total = result_numbers.get('modules_total')
+                report_build.jobs_finished = result_numbers.get('jobs_finished')
+                report_build.jobs_total = result_numbers.get('jobs_total')
+                report_build.started_at = trigger_build.get('start_timestamp')
+                report_build.fetched_at = qareport_build.get('last_fetched_timestamp')
+                report_build.status = qareport_build.get('build_status')
+                report_build.save()
 
                 final_jobs = qareport_build.get('final_jobs')
                 resubmitted_or_duplicated_jobs = qareport_build.get('resubmitted_or_duplicated_jobs')
 
+                # save qareport job to database
                 for job in final_jobs + resubmitted_or_duplicated_jobs:
                     test_numbers = job.get('numbers')
                     if test_numbers is None:
@@ -307,52 +278,26 @@ class Command(BaseCommand):
                             job['name'] = job_definition.get('job_name')
                             logger.info("Job name set to {} with information from job definition".format(job.get('name')))
 
-                    try:
-                        report_job = ReportJob.objects.get(job_url=job.get('external_url'))
+                    report_job = ReportJob.objects.get_or_create(job_url=job.get('external_url'))[0]
+                    report_job.job_name = job.get('name')
+                    report_job.attachment_url = job.get('attachment_url')
+                    report_job.qa_job_id = job.get('id')
+                    report_job.report_build = report_build
+                    report_job.parent_job = job.get('parent_job')
+                    report_job.status = job.get('job_status')  #JOBSNOTSUBMITTED / JOBSINPROGRESS / JOBSCOMPLETED
+                    report_job.failure_msg = failure_msg
+                    report_job.resubmitted = resubmitted
+                    report_job.number_passed = test_numbers.get('number_passed')
+                    report_job.number_failed = test_numbers.get('number_failed')
+                    report_job.number_assumption_failure = test_numbers.get('number_assumption_failure')
+                    report_job.number_ignored = test_numbers.get('number_ignored')
+                    report_job.number_total = test_numbers.get('number_total')
+                    report_job.modules_done = test_numbers.get('modules_done')
+                    report_job.modules_total = test_numbers.get('modules_total')
+                    report_job.submitted_at = submitted_at
+                    report_job.fetched_at = fetched_at
+                    report_job.save()
 
-                        report_job.job_name = job.get('name')
-                        report_job.attachment_url = job.get('attachment_url')
-                        report_job.qa_job_id = job.get('id')
-                        report_job.report_build = report_build
-                        report_job.parent_job = job.get('parent_job')
-
-                        # JOBSNOTSUBMITTED / JOBSINPROGRESS / JOBSCOMPLETED
-                        report_job.status = job.get('job_status')
-
-                        report_job.failure_msg = failure_msg
-                        report_job.resubmitted = resubmitted
-
-                        report_job.submitted_at = submitted_at
-                        report_job.fetched_at = fetched_at
-
-                        report_job.number_passed = test_numbers.get('number_passed')
-                        report_job.number_failed = test_numbers.get('number_failed')
-                        report_job.number_assumption_failure = test_numbers.get('number_assumption_failure')
-                        report_job.number_ignored = test_numbers.get('number_ignored')
-                        report_job.number_total = test_numbers.get('number_total')
-                        report_job.modules_done = test_numbers.get('modules_done')
-                        report_job.modules_total = test_numbers.get('modules_total')
-
-                        report_job.save()
-                    except ReportJob.DoesNotExist:
-                        ReportJob.objects.create(job_url=job.get('external_url'),
-                                            job_name=job.get('name'),
-                                            attachment_url=job.get('attachment_url'),
-                                            qa_job_id=job.get('id'),
-                                            report_build=report_build,
-                                            parent_job= job.get('parent_job'),
-                                            status=job.get('job_status'),
-                                            failure_msg=failure_msg,
-                                            resubmitted=resubmitted,
-                                            number_passed=test_numbers.get('number_passed'),
-                                            number_failed=test_numbers.get('number_failed'),
-                                            number_assumption_failure=test_numbers.get('number_assumption_failure'),
-                                            number_ignored=test_numbers.get('number_ignored'),
-                                            number_total=test_numbers.get('number_total'),
-                                            modules_done=test_numbers.get('modules_done'),
-                                            modules_total=test_numbers.get('modules_total'),
-                                            submitted_at=submitted_at,
-                                            fetched_at=fetched_at)
 
         # print out the reports
         print("########## REPORTS FOR KERNEL CHANGES#################")
