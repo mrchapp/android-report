@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from django.contrib import admin
-from .models import KernelChange, CiBuild, ReportBuild, ReportProject, ReportJob
+from .models import KernelChange, CiBuild, ReportBuild, ReportProject, ReportJob, TestCase
 
 # Register your models here.
 class KernelChangeAdmin(admin.ModelAdmin):
@@ -30,8 +30,14 @@ class ReportJobAdmin(admin.ModelAdmin):
     search_fields = ['job_name', 'report_build__version', 'status', 'failure_msg']
 
 
+class TestCaseAdmin(admin.ModelAdmin):
+    list_display = ['suite', 'name', 'result', 'measurement', 'unit', 'lava_nick', 'job_id']
+    search_fields = ['suite', 'name', 'result', 'measurement', 'unit', 'lava_nick', 'job_id']
+
+
 admin.site.register(KernelChange, KernelChangeAdmin)
 admin.site.register(CiBuild, CiBuildAdmin)
 admin.site.register(ReportBuild, ReportBuildAdmin)
 admin.site.register(ReportProject, ReportProjectAdmin)
 admin.site.register(ReportJob, ReportJobAdmin)
+admin.site.register(TestCase, TestCaseAdmin)
