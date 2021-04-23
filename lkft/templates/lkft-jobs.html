@@ -13,6 +13,18 @@
 {% endblock %}
 
 {% block content %}
+<div class="row">
+<table class="table"><tbody><tr>
+        <td style="text-align: right;">
+            {% if fetch_latest %}
+                <a href="/lkft/jobs/?build_id={{build.id}}">Only show data cached</a>
+            {% else %}
+                <a href="/lkft/jobs/?build_id={{build.id}}&fetch_latest=true">Refresh with the latest data</a>
+            {% endif %}
+        </td>
+    </tr></tbody></table>
+</div>
+
 <div>
 <h2>Final Job List:</h2>
 <table border="1">
