@@ -2077,29 +2077,28 @@ def new_kernel_changes(request, branch, describe, trigger_name, trigger_number):
     logger.info('request from remote_host=%s,remote_addr=%s' % (remote_host, remote_addr))
     logger.info('request for branch=%s, describe=%s, trigger_name=%s, trigger_number=%s' % (branch, describe, trigger_name, trigger_number))
 
-    irc.sendAndQuit(msgStrOrAry="New kernel changes found: branch=%s, describe=%s, %s" % (branch, describe, "https://ci.linaro.org/job/%s/%s" % (trigger_name, trigger_number)))
-
     err_msg = None
-    try:
-        KernelChange.objects.get(branch=branch, describe=describe)
+    db_kernelchange, newly_created = KernelChange.objects.get_or_create(branch=branch, describe=describe)
+    if not newly_created:
         err_msg = 'request for branch=%s, describe=%s is already there' % (branch, describe)
         logger.info(err_msg)
-    except KernelChange.DoesNotExist:
-        kernel_change = KernelChange.objects.create(branch=branch,
-                                    describe=describe,
-                                    reported=False,
-                                    trigger_name=trigger_name,
-                                    trigger_number=trigger_number)
-        CiBuild.objects.create(name=trigger_name,
-                                number=trigger_number,
-                                kernel_change=kernel_change)
-
-
-    if err_msg is None:
-        return HttpResponse(status=200)
     else:
+        db_kernelchange.trigger_name = trigger_name
+        db_kernelchange.trigger_number = trigger_number
+        db_kernelchange.save()
+
+        db_cibuild, newly_created = CiBuild.objects.get_or_create(name=trigger_name, number=trigger_number)
+        if db_cibuild.kernel_change is None:
+            db_cibuild.kernel_change = kernel_change
+            db_cibuild.save()
+
+        irc.sendAndQuit(msgStrOrAry="New kernel changes found: branch=%s, describe=%s, %s" % (branch, describe, "https://ci.linaro.org/job/%s/%s" % (trigger_name, trigger_number)))
+
+    if err_msg is not None:
         return HttpResponse("ERROR:%s" % err_msg,
                             status=200)
+
+    return HttpResponse(status=200)
 
 
 def new_build(request, branch, describe, name, number):
@@ -2114,27 +2113,41 @@ def new_build(request, branch, describe, name, number):
     logger.info('request for branch=%s, describe=%s, trigger_name=%s, trigger_number=%s' % (branch, describe, name, number))
 
     err_msg = None
-    try:
-        kernel_change = KernelChange.objects.get(branch=branch, describe=describe)
 
-        try:
-            CiBuild.objects.get(name=name, number=number)
+    db_kernelchange, kernelchange_newly_created = KernelChange.objects.get_or_create(branch=branch, describe=describe)
+    if kernelchange_newly_created:
+        err_msg = "The change for the specified kernel and describe does not exist but created: branch=%s, describe=%s" % (branch, describe)
+
+    db_cibuild, cibuild_newly_created = CiBuild.objects.get_or_create(name=name, number=number)
+    if not cibuild_newly_created:
+        if err_msg is not None:
+            err_msg = "%s, and the build already recorded: name=%s, number=%s" % (err_msg, name, number)
+        else:
             err_msg = "The build already recorded: name=%s, number=%s" % (name, number)
-            logger.info(err_msg)
-        except CiBuild.DoesNotExist:
-            CiBuild.objects.create(name=name,
-                                    number=number,
-                                    kernel_change=kernel_change)
-            kernel_change.reported = False
-            kernel_change.save()
+    else:
+        # the build is resubmitted
+        db_kernelchange.reported = False
+        db_kernelchange.save()
 
-    except KernelChange.DoesNotExist:
-        err_msg = "The change for the specified kernel and describe does not exist: branch=%s, describe=%s" % (branch, describe)
-        logger.info(err_msg)
+    if db_cibuild.kernel_change is None:
+        db_cibuild.kernel_change = db_kernelchange
+        db_cibuild.save()
+
+    if db_kernelchange.trigger_name is None or db_kernelchange.trigger_number is None:
+        ci_build_url = jenkins_api.get_job_url(name=name, number=number)
+        ci_build = jenkins_api.get_build_details_with_full_url(build_url=ci_build_url)
+        trigger_ci_build = jenkins_api.get_final_trigger_from_ci_build(ci_build)
+        trigger_ci_build_url = trigger_ci_build.get('url')
+        trigger_ci_build_number = trigger_ci_build_url.strip('/').split('/')[-1]
+        trigger_ci_build_name = trigger_ci_build_url.strip('/').split('/')[-2]
+        db_kernelchange.trigger_name = trigger_ci_build_name
+        db_kernelchange.trigger_number = trigger_ci_build_number
+        db_kernelchange.save()
 
     if err_msg is None:
         return HttpResponse(status=200)
     else:
+        logger.info(err_msg)
         return HttpResponse("ERROR:%s" % err_msg,
                             status=200)
 
