@@ -1006,7 +1006,7 @@ def cache_qaproject_to_database(target_project):
     return db_report_project
 
 
-def cache_qabuild_to_databas(qareport_build):
+def cache_qabuild_to_database(qareport_build):
     db_report_build, created = ReportBuild.objects.get_or_create(qa_build_id=qareport_build.get('id'))
     if created or db_report_build.metadata_url is None or not db_report_build.finished:
         db_report_build.version = qareport_build.get('version')
@@ -1106,7 +1106,7 @@ def get_builds_from_database_or_qareport(project_id, db_reportproject, force_fet
     if force_fetch_from_qareport or needs_fetch_builds_from_qareport:
         builds = qa_report_api.get_all_builds(project_id)
         for build in builds:
-            cache_qabuild_to_databas(build)
+            cache_qabuild_to_database(build)
 
     return builds
 
@@ -1139,7 +1139,7 @@ def get_build_from_database_or_qareport(build_id, force_fetch_from_qareport=Fals
         qareport_build = get_build_from_database(db_report_build)
     else:
         qareport_build = qa_report_api.get_build(build_id)
-        db_report_build = cache_qabuild_to_databas(qareport_build)
+        db_report_build = cache_qabuild_to_database(qareport_build)
 
     return (qareport_build, db_report_build)
 
