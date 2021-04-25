@@ -183,15 +183,7 @@ class Command(BaseCommand):
             kernel_change.result = status
             kernel_change.timestamp = start_timestamp
             kernel_change.duration = (finished_timestamp - start_timestamp).total_seconds()
-            kernel_change.number_passed = test_numbers.number_passed
-            kernel_change.number_failed = test_numbers.number_failed
-            kernel_change.number_assumption_failure = test_numbers.number_assumption_failure
-            kernel_change.number_ignored = test_numbers.number_ignored
-            kernel_change.number_total = test_numbers.number_total
-            kernel_change.modules_done = test_numbers.modules_done
-            kernel_change.modules_total = test_numbers.modules_total
-            kernel_change.jobs_finished = test_numbers.jobs_finished
-            kernel_change.jobs_total = test_numbers.jobs_total
+            test_numbers.setValueForDatabaseRecord(kernel_change)
             kernel_change.save()
 
             # Try to cache report build informtion to database
@@ -217,18 +209,10 @@ class Command(BaseCommand):
                 report_build.kernel_change = kernel_change
                 report_build.ci_build = dbci_build
                 report_build.ci_trigger_build = trigger_dbci_build
-                report_build.number_passed = result_numbers.get('number_passed')
-                report_build.number_failed = result_numbers.get('number_failed')
-                report_build.number_assumption_failure = result_numbers.get('number_assumption_failure')
-                report_build.number_ignored = result_numbers.get('number_ignored')
-                report_build.number_total = result_numbers.get('number_total')
-                report_build.modules_done = result_numbers.get('modules_done')
-                report_build.modules_total = result_numbers.get('modules_total')
-                report_build.jobs_finished = result_numbers.get('jobs_finished')
-                report_build.jobs_total = result_numbers.get('jobs_total')
                 report_build.started_at = trigger_build.get('start_timestamp')
                 report_build.fetched_at = qareport_build.get('last_fetched_timestamp')
                 report_build.status = qareport_build.get('build_status')
+                qa_report.TestNumbers.setHashValueForDatabaseRecord(report_build, report_job. result_numbers)
                 report_build.save()
 
                 final_jobs = qareport_build.get('final_jobs')
@@ -236,67 +220,7 @@ class Command(BaseCommand):
 
                 # save qareport job to database
                 for job in final_jobs + resubmitted_or_duplicated_jobs:
-                    test_numbers = job.get('numbers')
-                    if test_numbers is None:
-                        test_numbers = {
-                            'number_passed': 0,
-                            'number_failed': 0,
-                            'number_assumption_failure': 0,
-                            'number_ignored': 0,
-                            'number_total': 0,
-                            'modules_done': 0,
-                            'modules_total': 0,
-                        }
-
-                    if job.get('submitted_at'):
-                        submitted_at = qa_report_api.get_aware_datetime_from_str(job.get('submitted_at'))
-                    else:
-                        submitted_at = None
-
-                    if job.get('fetched_at'):
-                        fetched_at = qa_report_api.get_aware_datetime_from_str(job.get('fetched_at'))
-                    else:
-                        fetched_at = None
-
-                    if job.get('resubmitted'):
-                        resubmitted = job.get('resubmitted')
-                    else:
-                        resubmitted = False
-
-                    if job.get('failure'):
-                        failure_msg = job.get('failure').get('error_msg')
-                    else:
-                        failure_msg = None
-
-                    if not job.get('name'):
-                        job_definition = qa_report_api.get_job_definition(job.get('definition'))
-                        if job_definition.get('job_name') is None:
-                            # the project had been deleted or not specified(like the gki build)
-                            logger.info("Failed to get job name from job definition: {}".format(job.get('definition')))
-                            job['name'] = 'qareport-id-{}'.format(job.get('id'))
-                        else:
-                            job['name'] = job_definition.get('job_name')
-                            logger.info("Job name set to {} with information from job definition".format(job.get('name')))
-
-                    report_job = ReportJob.objects.get_or_create(job_url=job.get('external_url'))[0]
-                    report_job.job_name = job.get('name')
-                    report_job.attachment_url = job.get('attachment_url')
-                    report_job.qa_job_id = job.get('id')
-                    report_job.report_build = report_build
-                    report_job.parent_job = job.get('parent_job')
-                    report_job.status = job.get('job_status')  #JOBSNOTSUBMITTED / JOBSINPROGRESS / JOBSCOMPLETED
-                    report_job.failure_msg = failure_msg
-                    report_job.resubmitted = resubmitted
-                    report_job.number_passed = test_numbers.get('number_passed')
-                    report_job.number_failed = test_numbers.get('number_failed')
-                    report_job.number_assumption_failure = test_numbers.get('number_assumption_failure')
-                    report_job.number_ignored = test_numbers.get('number_ignored')
-                    report_job.number_total = test_numbers.get('number_total')
-                    report_job.modules_done = test_numbers.get('modules_done')
-                    report_job.modules_total = test_numbers.get('modules_total')
-                    report_job.submitted_at = submitted_at
-                    report_job.fetched_at = fetched_at
-                    report_job.save()
+                    cache_qajob_to_database(job)
 
 
         # print out the reports
