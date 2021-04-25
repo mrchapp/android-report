@@ -195,6 +195,9 @@ def download_attachments_save_result(jobs=[]):
         # if incomplete jobs are not cached.
         report_job = cache_qajob_to_database(job)
         if report_job.results_cached:
+            # so that places that use job['numbers'] would still work, like the lkftreport script
+            job['numbers'] = qa_report.TestNumbers().addWithDatabaseRecord(report_job).toHash()
+            job['numbers']['finished_successfully'] = report_job.finished_successfully
             continue
 
         if not job.get('lava_config'):
