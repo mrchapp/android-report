@@ -25,7 +25,7 @@ from lcr.irc import IRC
 
 from lcr.settings import QA_REPORT, QA_REPORT_DEFAULT
 
-from lkft.views import get_kernel_changes_info
+from lkft.views import get_kernel_changes_info, cache_qajob_to_database
 from lkft.views import extract, get_lkft_bugs, get_hardware_from_pname, get_result_file_path, get_kver_with_pname_env
 
 logger = logging.getLogger(__name__)
@@ -212,7 +212,7 @@ class Command(BaseCommand):
                 report_build.started_at = trigger_build.get('start_timestamp')
                 report_build.fetched_at = qareport_build.get('last_fetched_timestamp')
                 report_build.status = qareport_build.get('build_status')
-                qa_report.TestNumbers.setHashValueForDatabaseRecord(report_build, report_job. result_numbers)
+                qa_report.TestNumbers.setHashValueForDatabaseRecord(report_build, result_numbers)
                 report_build.save()
 
                 final_jobs = qareport_build.get('final_jobs')

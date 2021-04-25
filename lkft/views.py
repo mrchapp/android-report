@@ -194,7 +194,8 @@ def download_attachments_save_result(jobs=[]):
         # cache all the jobs, otherwise the status is not correct for the build
         # if incomplete jobs are not cached.
         report_job = cache_qajob_to_database(job)
-        if report_job.results_cached:
+        if report_job.results_cached and \
+                ( not is_cts_vts_job(job.get('name')) or report_job.modules_total > 0 ):
             # so that places that use job['numbers'] would still work, like the lkftreport script
             job['numbers'] = qa_report.TestNumbers().addWithDatabaseRecord(report_job).toHash()
             job['numbers']['finished_successfully'] = report_job.finished_successfully
@@ -1067,9 +1068,9 @@ def cache_qajob_to_database(job):
         resubmitted = job.get('resubmitted')
         report_job.resubmitted = resubmitted
 
-    if not report_job.results_cached and \
-            job.get('numbers') is not None:
-        qa_report.TestNumbers.setHashValueForDatabaseRecord(report_job, report_job. job.get('numbers'))
+    #if not report_job.results_cached and \
+    if job.get('numbers') is not None:
+        qa_report.TestNumbers.setHashValueForDatabaseRecord(report_job, job.get('numbers'))
         report_job.results_cached = True
         report_job.finished_successfully = True
 
