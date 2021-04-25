@@ -1060,6 +1060,16 @@ def cache_qajob_to_database(job):
         db_report_build =  get_build_from_database_or_qareport(target_build_id)[1]
         report_job.report_build = db_report_build
 
+    if job.get('resubmitted'):
+        resubmitted = job.get('resubmitted')
+        report_job.resubmitted = resubmitted
+
+    if not report_job.results_cached and \
+            job.get('numbers') is not None:
+        qa_report.TestNumbers.setHashValueForDatabaseRecord(report_job, report_job. job.get('numbers'))
+        report_job.results_cached = True
+        report_job.finished_successfully = True
+
     report_job.save()
 
     return report_job
