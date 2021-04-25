@@ -26,7 +26,7 @@ class ReportProjectAdmin(admin.ModelAdmin):
 
 
 class ReportJobAdmin(admin.ModelAdmin):
-    list_display = ['job_name', 'report_build', 'status', 'resubmitted', 'failure_msg']
+    list_display = ['job_name', 'job_url', 'report_build', 'status','resubmitted', 'failure_msg']
     search_fields = ['job_name', 'report_build__version', 'status', 'failure_msg']
 
 
