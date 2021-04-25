@@ -12,9 +12,9 @@ class KernelChangeManager(models.Manager):
 class KernelChange(models.Model):
     branch = models.CharField(max_length=255)
     describe = models.CharField(max_length=255)
-    reported = models.BooleanField()
+    reported = models.BooleanField(default=False)
     trigger_name = models.CharField(max_length=255)
-    trigger_number = models.IntegerField()
+    trigger_number = models.IntegerField(default=0)
 
     # TRIGGER_BUILD_COMPLETED
     # CI_BUILDS_IN_QUEUE / CI_BUILDS_NOT_REPORTED / CI_BUILDS_IN_PROGRESS / CI_BUILDS_COMPLETED
