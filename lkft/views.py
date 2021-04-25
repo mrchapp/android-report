@@ -2099,7 +2099,7 @@ def new_kernel_changes(request, branch, describe, trigger_name, trigger_number):
 
         db_cibuild, newly_created = CiBuild.objects.get_or_create(name=trigger_name, number=trigger_number)
         if db_cibuild.kernel_change is None:
-            db_cibuild.kernel_change = kernel_change
+            db_cibuild.kernel_change = db_kernelchange
             db_cibuild.save()
 
         irc.sendAndQuit(msgStrOrAry="New kernel changes found: branch=%s, describe=%s, %s" % (branch, describe, "https://ci.linaro.org/job/%s/%s" % (trigger_name, trigger_number)))
