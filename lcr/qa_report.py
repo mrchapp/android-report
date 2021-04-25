@@ -354,8 +354,13 @@ class QAReportApi(RESTFullApi):
             job_name = job.get('name')
             if job_name is None:
                 job_definition = self.get_job_definition(job.get('definition'))
-                job_name = job_definition.get('job_name')
-                job['name'] = job_name
+                if job_definition.get('job_name') is None:
+                    # the project had been deleted or not specified(like the gki build)
+                    logger.info("Failed to get job name from job definition: {}".format(job.get('definition')))
+                    job['name'] = 'qareport-id-{}'.format(job.get('id'))
+                else:
+                    job['name'] = job_definition.get('job_name')
+                    logger.info("Job name set to {} with information from job definition".format(job.get('name')))
             self.set_job_status(job)
             self.reset_qajob_failure_msg(job)
 
