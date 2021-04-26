@@ -1108,11 +1108,13 @@ def get_builds_from_database_or_qareport(project_id, db_reportproject, force_fet
         db_report_builds = ReportBuild.objects.filter(qa_project=db_reportproject).order_by('-qa_build_id')
         if len(db_report_builds) > 0:
             for db_report_build in db_report_builds:
+                if db_report_build.metadata_url is None:
+                    # re-fetch the data information for builds which were cached before,
+                    # but do not have the finished and metadata_url cached
+                    new_db_report_build = get_build_from_database_or_qareport(db_report_build.qa_build_id, force_fetch_from_qareport=True)[1]
+                else:
+                    new_db_report_build = db_report_build
                 build = get_build_from_database(db_report_build)
-                # if not db_report_build.finished:
-                #     needs_fetch_builds_from_qareport = True
-                #     break
-                # else:
                 builds.append(build)
         else:
             needs_fetch_builds_from_qareport = True
