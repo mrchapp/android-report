@@ -280,8 +280,11 @@ class QAReportApi(RESTFullApi):
             return 'https://%s/' % self.domain.strip('/')
 
 
-    def get_projects(self):
-        api_url = "/api/projects/"
+    def get_projects(self, filter_url=None):
+        if filter_url is not None:
+            api_url = filter_url
+        else:
+            api_url = "/api/projects/"
         return self.get_list_results(api_url=api_url)
 
     def get_projects_with_group_id(self, group_id):
@@ -367,29 +370,31 @@ class QAReportApi(RESTFullApi):
         return jobs
 
 
-    def get_project_with_name(self, project_name):
-        for project in self.get_projects():
-            if project.get('full_name') == project_name:
+    def get_project_with_name(self, project_full_name):
+        # https://qa-reports.linaro.org/api/projects/?full_name=android-lkft%2Fmainline-gki-aosp-master-db845c
+        api_url = "/api/projects/?full_name={}".format(project_full_name)
+        for project in self.get_projects(filter_url=api_url):
+            if project.get('full_name') == project_full_name:
                 return project
         return None
 
 
-    def get_builds_with_project_name(self, project_name):
-        qa_report_project = self.get_project_with_name(project_name)
+    def get_builds_with_project_name(self, project_full_name):
+        qa_report_project = self.get_project_with_name(project_full_name)
         if not qa_report_project:
-            logger.info("qa report project for build %s not found" % project_name)
+            logger.info("qa report project for build %s not found" % project_full_name)
             return []
         return self.get_all_builds(qa_report_project.get('id'))
 
 
-    def get_jobs_with_project_name_build_version(self, project_name, build_version):
-        qa_report_project = self.get_project_with_name(project_name)
+    def get_jobs_with_project_name_build_version(self, project_full_name, build_version):
+        qa_report_project = self.get_project_with_name(project_full_name)
         if not qa_report_project:
-            logger.info("qa report project for build %s not found" % project_name)
+            logger.info("qa report project for build %s not found" % project_full_name)
             return []
         build = self.get_build_with_version(build_version, qa_report_project.get('id'))
         if not build:
-            logger.info("qa report build for project(%s) with build no(%s) not found" % (project_name, build_version))
+            logger.info("qa report build for project(%s) with build no(%s) not found" % (project_full_name, build_version))
             return []
         return self.get_jobs_for_build(build.get('id'))
 
