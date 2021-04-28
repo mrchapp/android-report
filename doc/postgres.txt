@@ -83,5 +83,11 @@
    \h help
    \q exit
    select * from report_testcase where job_id  = '299593';
+   select * from lkft_reportjob where job_name LIKE '%-cts-CtsDeqpTestCases';
+   select job_name, results_cached, report_build_id from lkft_reportjob where job_name LIKE '%-cts-CtsDeqpTestCases';
+   update lkft_reportjob set results_cached = 'f' where job_name LIKE '%-cts-CtsDeqpTestCases';
+   update lkft_reportjob set results_cached = f where job_name LIKE '%-cts-CtsDeqpTestCases';
    delete from report_testcase where job_id  = '299593';
 
+   sudo -u postgres psql  -d testreport -c "\dt"
+   sudo -u postgres psql  -d testreport -c "select * from lkft_reportjob;"
