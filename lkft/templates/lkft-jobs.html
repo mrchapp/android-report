@@ -25,6 +25,29 @@
     </tr></tbody></table>
 </div>
 
+{% if build_meta %}
+<div>
+<h2>Build Metadata Info:</h2>
+<table border="1">
+<tr>
+    <th> Android Reference Build</th> <td><a href="{{ build_meta.android_url }}">{{ build_meta.android_url }}</a></td>
+</tr>
+<tr>
+    <th> LKFT Build</th> <td><a href="{{ build_meta.build_url }}">{{ build_meta.build_url }}</a></td>
+</tr>
+<tr>
+    <th> CTS Package</th> <td><a href="{{ build_meta.cts_url }}">{{ build_meta.cts_url }}</a></td>
+</tr>
+<tr>
+    <th> VTS Package</th> <td><a href="{{ build_meta.vts_url }}">{{ build_meta.vts_url }}</a></td>
+</tr>
+<tr>
+    <th> Kernel Tool Chain</th> <td><a href="{{ build_meta.toolchain }}">{{ build_meta.toolchain }}</a></td>
+</tr>
+</table>
+</div>
+{% endif %}
+
 <div>
 <h2>Final Job List:</h2>
 <table border="1">

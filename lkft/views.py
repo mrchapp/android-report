@@ -1705,6 +1705,15 @@ def list_jobs(request):
     final_jobs = sorted(jobs_to_be_checked, key=get_job_name)
     failed_jobs = sorted(resubmitted_duplicated_jobs, key=get_job_name)
 
+    build_meta = {}
+    if build.get('metadata', None):
+        build_meta = qa_report_api.get_build_meta_with_url(build.get('metadata'))
+        build_meta['android_url'] = build_meta.get('android.url')
+        build_meta['build_url'] = build_meta.get('build-url')
+        build_meta['vts_url'] = build_meta.get('vts-url')
+        build_meta['cts_url'] = build_meta.get('cts-url')
+        build_meta['toolchain'] = build_meta.get('toolchain')
+
     return render(request, 'lkft-jobs.html',
                            {
                                 'final_jobs': final_jobs,
@@ -1718,6 +1727,7 @@ def list_jobs(request):
                                 'bugzilla_show_bug_prefix': bugzilla_show_bug_prefix,
                                 'benchmarks_res': benchmarks_res,
                                 'fetch_latest': fetch_latest_from_qa_report,
+                                'build_meta': build_meta,
                             }
                 )
 
