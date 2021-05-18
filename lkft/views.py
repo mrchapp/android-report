@@ -2728,6 +2728,19 @@ def mark_kernel_changes_reported(request, branch, describe):
 def homepage(request):
     return render(request, 'lkft-homepage.html')
 
+
+def is_not_benchmark_project(project):
+    if is_benchmark_project(project):
+        return False
+    else:
+        return True
+
+
+def is_benchmark_project(project):
+    project_name = project.get('name')
+    return project_name.endswith("-benchmarks")
+
+
 def list_projects_simple(request):
 
     fetch_latest_from_qa_report = request.GET.get('fetch_latest', "false").lower() == 'true'
@@ -2737,11 +2750,18 @@ def list_projects_simple(request):
                 'group_id': '42',
                 'group_name': 'android-lkft-benchmarks',
                 'display_title': "Boottime Projects",
+                'include_filter_func': is_not_benchmark_project,
             },
             {
                 'group_id': '17',
                 'group_name': 'android-lkft',
                 'display_title': "LKFT Projects",
+            },
+            {
+                'group_id': '42',
+                'group_name': 'android-lkft-benchmarks',
+                'display_title': "Benchmark Projects",
+                'include_filter_func': is_benchmark_project,
             },
             # {
             #     'group_name': 'android-lkft-rc',
@@ -2754,7 +2774,7 @@ def list_projects_simple(request):
         group_name = group.get('group_name')
 
 
-        logger.info('start to get the projects for group %s' %  group.get('group_name'))
+        logger.info('start to get the projects for group of %s, for purpose of "%s"', group.get('group_name'), group.get('display_title'))
         projects = []
         if fetch_latest_from_qa_report:
             projects = qa_report_api.get_projects_with_group_id(group_id)
@@ -2782,6 +2802,10 @@ def list_projects_simple(request):
                 # the current user has no permission to access the project
                 continue
 
+            if group.get('include_filter_func', None):
+                if not group['include_filter_func'](project):
+                    continue
+
             project['group'] = group
 
             group_projects = group.get('projects')
@@ -2792,10 +2816,10 @@ def list_projects_simple(request):
                 group['qareport_url'] = project.get('group')
 
 
-
     def get_project_name(item):
         #4.19q
         versions = item.get('name').split('-')[0].split('.')
+        others = item.get('name').split('-')[1:]
         try:
             version_0 = int(versions[0])
 
@@ -2816,7 +2840,7 @@ def list_projects_simple(request):
             version_1 = ""
             version_2 = ""
 
-        return (version_0, version_1, version_2)
+        return (version_0, version_1, version_2, '-'.join(others))
 
     for group in groups:
         if group.get('projects'):
