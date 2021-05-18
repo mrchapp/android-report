@@ -1,3 +1,4 @@
+{% if projects %}
 <table border="1">
     <tr>
         <th>Index</th>
@@ -12,3 +13,7 @@
 </tr>
 {% endfor %}
 </table>
+
+{% else %}
+Please log in to try again, or contact the administrator for permssion.
+{% endif %}
