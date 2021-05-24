@@ -47,6 +47,7 @@ BUGZILLA_API_KEY = '' ## TO BE UPDATED
 # old file might be removed from archive.validation.linaro.org already
 # so only list numbers for the recent 20 builds
 BUILD_WITH_JOBS_NUMBER = 10
+BUILD_WITH_BENCHMARK_JOBS_NUMBER = 5
 
 # indicate if the instance is deployed with apache or run as single django instance
 DEPLOYED_WITH_APACHE = False

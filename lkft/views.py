@@ -28,7 +28,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User, AnonymousUser, Group as auth_group
 from django.utils.timesince import timesince
 
-from lcr.settings import FILES_DIR, LAVA_SERVERS, BUGZILLA_API_KEY, BUILD_WITH_JOBS_NUMBER, DB_USE_POSTGRES
+from lcr.settings import FILES_DIR, LAVA_SERVERS, BUGZILLA_API_KEY, BUILD_WITH_JOBS_NUMBER, BUILD_WITH_BENCHMARK_JOBS_NUMBER, DB_USE_POSTGRES
 from lcr.settings import QA_REPORT, QA_REPORT_DEFAULT, JENKINS, JENKINS_DEFAULT
 from lcr.settings import RESTRICTED_PROJECTS
 from lcr.irc import IRC
@@ -1269,7 +1269,7 @@ def get_measurements_of_project(project_id=None, project_name=None, project_grou
 
     allbenchmarkjobs_result_dict = {}
     # for db_report_build in db_report_builds:
-    for build in local_builds[:BUILD_WITH_JOBS_NUMBER]:
+    for build in local_builds[:BUILD_WITH_BENCHMARK_JOBS_NUMBER]:
         jobs = get_jobs_for_build_from_db_or_qareport(build_id=build.get("id"), force_fetch_from_qareport=fetch_latest_from_qa_report)
         jobs_to_be_checked = get_classified_jobs(jobs=jobs).get('final_jobs')
         download_attachments_save_result(jobs_to_be_checked)
