@@ -89,5 +89,7 @@
    update lkft_reportjob set results_cached = f where job_name LIKE '%-cts-CtsDeqpTestCases';
    delete from report_testcase where job_id  = '299593';
 
-   sudo -u postgres psql  -d testreport -c "\dt"
-   sudo -u postgres psql  -d testreport -c "select * from lkft_reportjob;"
+   sudo -u postgres psql -d testreport -c "\dt"
+   sudo -u postgres psql -d testreport -c "select * from lkft_reportjob;"
+   sudo -u postgres psql -d testreport -c "select count(*) from lkft_testcase;"
+   sudo -u postgres psql -d testreport -c "SELECT * FROM lkft_testcase WHERE ( job_id = '2476852' AND lava_nick = 'production' AND suite LIKE '%_scimark' AND name = 'scimark-Monte-Carlo');"
