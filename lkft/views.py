@@ -110,7 +110,7 @@ def get_attachment_urls(jobs=[]):
             if lava_config:
                 job['lava_config'] = lava_config
             else:
-                logger.error('lava server is not found for job: %s' % job.get('url'))
+                logger.error('lava server is not found for job: %s' % job)
 
         if is_benchmark_job(job.get('name')):
             continue
@@ -1284,6 +1284,32 @@ def get_measurements_of_project(project_id=None, project_name=None, project_grou
         jobs_to_be_checked = get_classified_jobs(jobs=jobs).get('final_jobs')
         download_attachments_save_result(jobs_to_be_checked)
 
+        jobs_query = None
+        for benchmark_job_name in expected_benchmark_jobs:
+            for job in jobs_to_be_checked:
+                if job.get('name').endswith(benchmark_job_name):
+                    job_lava_id = job.get('job_id')
+                    lava_nick = job.get('lava_config').get('nick')
+                    if jobs_query is None:
+                        jobs_query = Q(job_id=job_lava_id, lava_nick=lava_nick)
+                    else:
+                        jobs_query = jobs_query | Q(job_id=job_lava_id, lava_nick=lava_nick)
+
+        if jobs_query is None:
+            logger.info('No available benchmark jobs for build version of %s ', build.get('version'))
+            continue
+
+        logger.info('Start getting all benchmark result from database for build version of %s ', build.get('version'))
+        test_case_res_s = TestCase.objects.filter(jobs_query)
+
+        test_case_hash = {}
+        for test_case in test_case_res_s:
+            test_suite = re.sub('^\d+_', '', test_case.suite)
+            test_case_key = "{}|{}|{}|{}".format(test_case.lava_nick, test_case.job_id, test_suite, test_case.name)
+            test_case_hash[test_case_key] = test_case
+
+        logger.info('Finished getting all benchmark result from database for build version of %s ', build.get('version'))
+
         for benchmark_job_name in expected_benchmark_jobs:
             target_job = None
             for job in jobs_to_be_checked:
@@ -1308,9 +1334,6 @@ def get_measurements_of_project(project_id=None, project_name=None, project_grou
                     testsuite_testcase = "%s#%s" % (testsuite, testcase)
                     if testsuite_testcase not in onejob_testcases:
                         onejob_testcases.append(testsuite_testcase)
-                    # which is actually ordered by the job id
-                    # final_jobs = ReportJob.objects.filter(report_build=db_report_build, resubmitted=False, status='Complete', job_name__endswith='-%s' % benchmark_job_name).order_by('job_url')
-                    # if final_jobs.count() <= 0:
 
                     if target_job is None:
                         # theere isn't any job finished successfully
@@ -1327,28 +1350,28 @@ def get_measurements_of_project(project_id=None, project_name=None, project_grou
                         job_lava_id = target_job.get('job_id')
                         lava_nick = target_job.get('lava_config').get('nick')
                         job_lava_url = target_job.get('external_url')
-                        try:
-                            test_case_res = TestCase.objects.get(job_id=job_lava_id, lava_nick=lava_nick, suite__endswith='_%s' % testsuite, name=testcase)
+
+                        test_case_key = "{}|{}|{}|{}".format(lava_nick, job_lava_id, testsuite, testcase)
+
+                        test_case_res = test_case_hash.get(test_case_key, None)
+                        if test_case_res:
                             unit = test_case_res.unit
                             measurement = test_case_res.measurement
-                        except TestCase.DoesNotExist:
-                            if benchmark_job_name == "boottime":
-                                if testsuite == 'boottime-fresh-install':
-                                    test_cases = TestCase.objects.filter(job_id=job_lava_id, lava_nick=lava_nick, suite__endswith='_%s' % "boottime-first-analyze", name=testcase)
-                                elif testsuite == 'boottime-reboot':
-                                    test_cases = TestCase.objects.filter(job_id=job_lava_id, lava_nick=lava_nick, suite__endswith='_%s' % "boottime-second-analyze", name=testcase)
-                                else:
-                                    test_cases = []
-                            else:
-                                test_cases = []
-
-                            if len(test_cases) > 0:
-                                test_case_res = test_cases[0]
+                        elif benchmark_job_name == "boottime":
+                            if testsuite == 'boottime-fresh-install':
+                                test_case_key = "{}|{}|{}|{}".format(lava_nick, job_lava_id, 'boottime-first-analyze', testcase)
+                            elif testsuite == 'boottime-reboot':
+                                test_case_key = "{}|{}|{}|{}".format(lava_nick, job_lava_id, 'boottime-second-analyze', testcase)
+                            test_case_res = test_case_hash.get(test_case_key, None)
+                            if test_case_res:
                                 unit = test_case_res.unit
                                 measurement = test_case_res.measurement
                             else:
                                 unit = '--'
                                 measurement = '--'
+                        else:
+                            unit = '--'
+                            measurement = '--'
 
                     onebuild_onejob_testcases_res.append({
                         'unit': unit,
