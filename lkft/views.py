@@ -184,6 +184,35 @@ def get_result_file_path(job=None):
     return result_file_path
 
 
+def save_testcases_with_bulk_call(testcase_objs=[]):
+    if len(testcase_objs) < 1:
+        return
+
+    if DB_USE_POSTGRES:
+        # the CtsDeqpTestCases module has about 1494348 testcases
+        # it would take about 4GB memory with batch_size = 100000
+        batch_size = 100000 # for sqlite https://docs.djangoproject.com/en/3.1/ref/models/querysets/#bulk-create
+        # from itertools import islice
+        # total_size = 0
+        # while True:
+        #     batch = list(islice(testcase_objs, batch_size))
+        #     if not batch:
+        #         break
+        #     return_objs = TestCase.objects.bulk_create(batch, batch_size)
+        #     total_size = total_size + len(return_objs)
+        #     logger.info("LIUYQ build_created %d/%d" % (total_size, len(testcase_objs)))
+        TestCase.objects.bulk_create(testcase_objs, batch_size)
+    else:
+        # otherwise following error will be reported:
+        #    Traceback (most recent call last):
+        #   File "/SATA3/django_instances/workspace-python3/lib/python3.7/site-packages/django/db/backends/utils.py", line 64, in execute
+        #       return self.cursor.execute(sql, params)
+        #   File "/SATA3/django_instances/workspace-python3/lib/python3.7/site-packages/django/db/backends/sqlite3/base.py", line 328, in execute
+        #       return Database.Cursor.execute(self, query, params)
+        #   sqlite3.OperationalError: too many terms in compound SELECT
+        TestCase.objects.bulk_create(testcase_objs)
+
+
 def download_attachments_save_result(jobs=[]):
     if len(jobs) == 0:
         return
@@ -214,6 +243,8 @@ def download_attachments_save_result(jobs=[]):
             job_results = qa_report.LAVAApi(lava_config=lava_config).get_job_results(job_id=job_id)
 
             TestCase.objects.filter(lava_nick=lava_config.get('nick'), job_id=job_id).delete()
+
+            testcase_objs = []
             for test in job_results:
                 if test.get("suite") == "lava":
                     continue
@@ -227,14 +258,15 @@ def download_attachments_save_result(jobs=[]):
                 else:
                     test["measurement"] = "{:.2f}".format(float(test.get("measurement")))
 
-                TestCase.objects.create(name=test.get("name"),
+                testcase_objs.append((TestCase(name=test.get("name"),
                                             result=test.get("result"),
                                             measurement=test.get("measurement"),
                                             unit=test.get("unit"),
                                             suite=test.get("suite"),
                                             lava_nick=lava_config.get('nick'),
-                                            job_id=job_id)
+                                            job_id=job_id)))
 
+            save_testcases_with_bulk_call(testcase_objs=testcase_objs)
 
         elif is_cts_vts_job(job.get('name')):
             # for cts /vts jobs
@@ -438,29 +470,7 @@ def save_tradeded_results_to_database(result_file_path, job, report_job):
                                                 lava_nick=lava_config.get('nick'),
                                                 job_id=job_id))
 
-            if DB_USE_POSTGRES:
-                # the CtsDeqpTestCases module has about 1494348 testcases
-                # it would take about 4GB memory with batch_size = 100000
-                batch_size = 100000 # for sqlite https://docs.djangoproject.com/en/3.1/ref/models/querysets/#bulk-create
-                # from itertools import islice
-                # total_size = 0
-                # while True:
-                #     batch = list(islice(testcase_objs, batch_size))
-                #     if not batch:
-                #         break
-                #     return_objs = TestCase.objects.bulk_create(batch, batch_size)
-                #     total_size = total_size + len(return_objs)
-                #     logger.info("LIUYQ build_created %d/%d" % (total_size, len(testcase_objs)))
-                TestCase.objects.bulk_create(testcase_objs, batch_size)
-            else:
-                # otherwise following error will be reported:
-                #    Traceback (most recent call last):
-                #   File "/SATA3/django_instances/workspace-python3/lib/python3.7/site-packages/django/db/backends/utils.py", line 64, in execute
-                #       return self.cursor.execute(sql, params)
-                #   File "/SATA3/django_instances/workspace-python3/lib/python3.7/site-packages/django/db/backends/sqlite3/base.py", line 328, in execute
-                #       return Database.Cursor.execute(self, query, params)
-                #   sqlite3.OperationalError: too many terms in compound SELECT
-                TestCase.objects.bulk_create(testcase_objs)
+            save_testcases_with_bulk_call(testcase_objs=testcase_objs)
 
             report_job.number_passed = number_passed
             report_job.number_failed = number_failed
