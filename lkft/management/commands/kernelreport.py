@@ -30,6 +30,7 @@ from lkft.views import get_test_result_number_for_build, get_lkft_build_status, 
 from lkft.views import extract
 from lkft.views import get_result_file_path
 from lkft.views import download_attachments_save_result
+from lkft.views import get_build_metadata
 from lkft.lkft_config import get_version_from_pname, get_kver_with_pname_env
 
 logger = logging.getLogger(__name__)
@@ -857,6 +858,21 @@ def find_antiregressions(goodruns):
 def print_androidresultheader(output, project_info, run, priorrun):
         output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - " )
         output.write("Current:" + run['version'] + "  Prior:" + priorrun['version']+"\n")
+
+        build_metadata = get_build_metadata(build_metadata_url=run.get('metadata'))
+        prior_build_metadata = get_build_metadata(build_metadata_url=priorrun.get('metadata'))
+        output.write("    " + "CTS Version:" + " - " )
+        if build_metadata.get('cts_version', 'UNKNOWN') == prior_build_metadata.get('cts_version', 'UNKNOWN'):
+            output.write("Current:" + build_metadata.get('cts_version', 'UNKNOWN') + " == Prior:" + prior_build_metadata.get('cts_version', 'UNKNOWN')+"\n")
+        else:
+            output.write("Current:" + build_metadata.get('cts_version', 'UNKNOWN') + " != Prior:" + prior_build_metadata.get('cts_version', 'UNKNOWN')+"\n")
+
+        output.write("    " + "VTS Version:" + " - " )
+        if build_metadata.get('vts_version', 'UNKNOWN') == prior_build_metadata.get('vts_version', 'UNKNOWN'):
+            output.write("Current:" + build_metadata.get('vts_version', 'UNKNOWN') + " == Prior:" + prior_build_metadata.get('vts_version', 'UNKNOWN')+"\n")
+        else:
+            output.write("Current:" + build_metadata.get('vts_version', 'UNKNOWN') + " != Prior:" + prior_build_metadata.get('vts_version', 'UNKNOWN')+"\n")
+
 
 def add_unique_kernel(unique_kernels, kernel_version, combo, unique_kernel_info):
     #pdb.set_trace()
