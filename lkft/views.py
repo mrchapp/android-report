@@ -1590,6 +1590,40 @@ def list_all_jobs(request):
                 )
 
 
+def get_cts_vss_version_from(cts_vts_url):
+    if cts_vts_url is None or len(cts_vts_url) ==0:
+        return cts_vts_url
+
+    cts_vts_url = re.sub('\/+', '/', cts_vts_url)
+    if cts_vts_url.find('aosp-master-throttled') >= 0:
+        # http://testdata.linaro.org/lkft/aosp-stable/aosp-master-throttled/7384311/test_suites_arm64/android-cts.zip
+        return "%s#%s" % (cts_vts_url.split('/')[-4], cts_vts_url.split('/')[-3])
+
+    return cts_vts_url.split('/')[-2]
+
+
+def get_build_metadata(build_metadata_url=None, project_name=None):
+    build_metadata = {}
+    if build_metadata_url is None:
+        return build_metadata
+
+    build_metadata_raw = qa_report_api.get_build_meta_with_url(build_metadata_url)
+    build_metadata['android_url'] = build_metadata_raw.get('android.url')
+    if project_name:
+        build_metadata['android_version'] = get_version_from_pname(pname=project_name)
+
+    build_metadata['build_url'] = build_metadata_raw.get('build-url')
+
+    build_metadata['toolchain'] = build_metadata_raw.get('toolchain')
+
+    build_metadata['vts_url'] = build_metadata_raw.get('vts-url')
+    build_metadata['vts_version'] = get_cts_vss_version_from(build_metadata_raw.get('vts-url'))
+    build_metadata['cts_url'] = build_metadata_raw.get('cts-url')
+    build_metadata['cts_version'] = get_cts_vss_version_from(build_metadata_raw.get('cts-url'))
+
+    return build_metadata
+
+
 def list_jobs(request):
     build_id = request.GET.get('build_id', None)
     fetch_latest_from_qa_report = request.GET.get('fetch_latest', "false").lower() == 'true'
@@ -1711,7 +1745,7 @@ def list_jobs(request):
             if found_bug is not None:
                 bugs_reproduced.append(found_bug)
 
-    android_version = get_version_from_pname(pname=project.get('name'))
+    android_version = get_version_from_pname(pname=project_name)
     open_bugs = []
     bugs_not_reproduced = []
     for bug in bugs:
@@ -1738,14 +1772,8 @@ def list_jobs(request):
     final_jobs = sorted(jobs_to_be_checked, key=get_job_name)
     failed_jobs = sorted(resubmitted_duplicated_jobs, key=get_job_name)
 
-    build_meta = {}
-    if build.get('metadata', None):
-        build_meta = qa_report_api.get_build_meta_with_url(build.get('metadata'))
-        build_meta['android_url'] = build_meta.get('android.url')
-        build_meta['build_url'] = build_meta.get('build-url')
-        build_meta['vts_url'] = build_meta.get('vts-url')
-        build_meta['cts_url'] = build_meta.get('cts-url')
-        build_meta['toolchain'] = build_meta.get('toolchain')
+    build_metadata = get_build_metadata(build_metadata_url=build.get('metadata'))
+    build_metadata['android_version'] = android_version
 
     return render(request, 'lkft-jobs.html',
                            {
@@ -1760,7 +1788,7 @@ def list_jobs(request):
                                 'bugzilla_show_bug_prefix': bugzilla_show_bug_prefix,
                                 'benchmarks_res': benchmarks_res,
                                 'fetch_latest': fetch_latest_from_qa_report,
-                                'build_meta': build_meta,
+                                'build_meta': build_metadata,
                             }
                 )
 
@@ -1770,6 +1798,7 @@ def get_bug_hardware_from_environment(environment):
         return 'HiKey'
     else:
         return None
+
 
 class BugCreationForm(forms.Form):
     project_name = forms.CharField(label='Project Name', widget=forms.TextInput(attrs={'size': 80}))
