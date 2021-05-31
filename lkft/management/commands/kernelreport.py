@@ -8,6 +8,7 @@
 import pdb
 import datetime
 import json
+import logging
 import os
 import re
 import yaml
@@ -30,6 +31,8 @@ from lkft.views import extract
 from lkft.views import get_result_file_path
 from lkft.views import download_attachments_save_result
 from lkft.lkft_config import get_version_from_pname, get_kver_with_pname_env
+
+logger = logging.getLogger(__name__)
 
 qa_report_def = QA_REPORT[QA_REPORT_DEFAULT]
 qa_report_api = qa_report.QAReportApi(qa_report_def.get('domain'), qa_report_def.get('token'))
@@ -605,6 +608,7 @@ def find_best_two_runs(builds, project_name, project, exact):
         baseExactVersionDict = versiontoMME(exact) 
 
     for build in builds:
+        logger.info("Checking %s, %s", project_name, build.get('version'))
         if bailaftertwo == 2:
             break
         build_number_passed = 0
@@ -671,63 +675,63 @@ def find_best_two_runs(builds, project_name, project, exact):
 
         #pdb.set_trace()
         for job in jobs:
-           ctsSymbol = re.compile('-cts')
+            ctsSymbol = re.compile('-cts')
 
-           ctsresult = ctsSymbol.search(job['name'])
-           jobstatus = job['job_status']
-           jobfailure = job['failure']
-           if ctsresult is not None:
-               print("cts job" + str(jobfailure) + '\n')
-           if jobstatus == 'Complete' and jobfailure is None :
-              markjob(job, jobTransactionStatus)
+            ctsresult = ctsSymbol.search(job['name'])
+            jobstatus = job['job_status']
+            jobfailure = job['failure']
+            if ctsresult is not None:
+                print("cts job" + str(jobfailure) + '\n')
+            if jobstatus == 'Complete' and jobfailure is None :
+                markjob(job, jobTransactionStatus)
 
-           result_file_path = get_result_file_path(job=job)
-           if not result_file_path or not os.path.exists(result_file_path):
-              continue
-           # now tally then move onto the next job
-           kernel_version = get_kver_with_pname_env(prj_name=project_name, env=job.get('environment'))
+            result_file_path = get_result_file_path(job=job)
+            if not result_file_path or not os.path.exists(result_file_path):
+                continue
+            # now tally then move onto the next job
+            kernel_version = get_kver_with_pname_env(prj_name=project_name, env=job.get('environment'))
 
-           platform = job.get('environment').split('_')[0]
-           metadata = {
-              'job_id': job.get('job_id'),
-              'qa_job_id': qa_report_api.get_qa_job_id_with_url(job_url=job.get('url')),
-              'result_url': job.get('attachment_url'),
-              'lava_nick': job.get('lava_config').get('nick'),
-              'kernel_version': kernel_version,
-              'platform': platform,
-           }
-           numbers = extract(result_file_path, failed_testcases_all=failures, metadata=metadata)
-           job['numbers'] = numbers
+            platform = job.get('environment').split('_')[0]
+            metadata = {
+                          'job_id': job.get('job_id'),
+                          'qa_job_id': qa_report_api.get_qa_job_id_with_url(job_url=job.get('url')),
+                          'result_url': job.get('attachment_url'),
+                          'lava_nick': job.get('lava_config').get('nick'),
+                          'kernel_version': kernel_version,
+                          'platform': platform,
+                        }
+            numbers = extract(result_file_path, failed_testcases_all=failures, metadata=metadata)
+            job['numbers'] = numbers
 
         # now let's see what we have. Do we have a complete yet?
         print("vts: "+ jobTransactionStatus['vts'] + " cts: "+jobTransactionStatus['cts'] + " boot: " +jobTransactionStatus['boot'] +'\n')
 
         if jobTransactionStatus['vts'] == 'true' and jobTransactionStatus['cts'] == 'true':
-           # and jobTransactionStatus['boot'] == 'true' :
-           #pdb.set_trace()
-           if bailaftertwo == 0 :
-               baseVersionDict = versiontoMME(build['version'])
-               if baseExactVersionDict is not None:
-                   if baseVersionDict['Extra'] != baseExactVersionDict['Extra']:
-                       continue
-               # print "baseset"
-           elif bailaftertwo == 1 :
-               nextVersionDict = versiontoMME(build['version'])
-               if nextVersionDict['Extra'] == baseVersionDict['Extra'] :
-                   continue
-           tallyNumbers(build, jobTransactionStatus)
+            # and jobTransactionStatus['boot'] == 'true' :
+            #pdb.set_trace()
+            if bailaftertwo == 0 :
+                baseVersionDict = versiontoMME(build['version'])
+                if baseExactVersionDict is not None:
+                    if baseVersionDict['Extra'] != baseExactVersionDict['Extra']:
+                        continue
+                # print "baseset"
+            elif bailaftertwo == 1 :
+                nextVersionDict = versiontoMME(build['version'])
+                if nextVersionDict['Extra'] == baseVersionDict['Extra'] :
+                    continue
+            tallyNumbers(build, jobTransactionStatus)
 
-           if nextVersionDict is not None:
-               if int(nextVersionDict['Extra']) > int(baseVersionDict['Extra']):
-                   goodruns.append(build)
-               else:
-                   goodruns.insert(0, build)
-           else:
-               goodruns.append(build)
+            if nextVersionDict is not None:
+                if int(nextVersionDict['Extra']) > int(baseVersionDict['Extra']):
+                    goodruns.append(build)
+                else:
+                    goodruns.insert(0, build)
+            else:
+                goodruns.append(build)
 
-           bailaftertwo += 1
+            bailaftertwo += 1
         else:
-           continue
+            continue
 
         #if 'run_status' in build:
         #   # print "found run status" + "build " + str(build.get("id")) + " NOT selected"
@@ -850,7 +854,7 @@ def find_antiregressions(goodruns):
                      'branch' : 'Android-4.19-q',},
 """
 
-def print_androidresultheader(output, project_info, run, priorrun ):
+def print_androidresultheader(output, project_info, run, priorrun):
         output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - " )
         output.write("Current:" + run['version'] + "  Prior:" + priorrun['version']+"\n")
 
