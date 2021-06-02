@@ -1590,7 +1590,7 @@ def list_all_jobs(request):
                 )
 
 
-def get_cts_vss_version_from(cts_vts_url):
+def get_cts_vts_version_from(cts_vts_url):
     if cts_vts_url is None or len(cts_vts_url) ==0:
         return cts_vts_url
 
@@ -1617,9 +1617,9 @@ def get_build_metadata(build_metadata_url=None, project_name=None):
     build_metadata['toolchain'] = build_metadata_raw.get('toolchain')
 
     build_metadata['vts_url'] = build_metadata_raw.get('vts-url')
-    build_metadata['vts_version'] = get_cts_vss_version_from(build_metadata_raw.get('vts-url'))
+    build_metadata['vts_version'] = get_cts_vts_version_from(build_metadata_raw.get('vts-url'))
     build_metadata['cts_url'] = build_metadata_raw.get('cts-url')
-    build_metadata['cts_version'] = get_cts_vss_version_from(build_metadata_raw.get('cts-url'))
+    build_metadata['cts_version'] = get_cts_vts_version_from(build_metadata_raw.get('cts-url'))
 
     return build_metadata
 
