@@ -35,7 +35,7 @@ from lcr.irc import IRC
 
 from lcr import qa_report, bugzilla
 from lcr.qa_report import DotDict, UrlNotFoundException
-from lcr.utils import download_urllib
+from lcr.utils import download_urllib, download_url_content
 from lkft.lkft_config import find_citrigger, find_cibuild, get_hardware_from_pname, get_version_from_pname, get_kver_with_pname_env
 from lkft.lkft_config import find_expect_cibuilds
 from lkft.lkft_config import get_qa_server_project, get_supported_branches
@@ -1594,10 +1594,23 @@ def get_cts_vts_version_from(cts_vts_url):
     if cts_vts_url is None or len(cts_vts_url) ==0:
         return cts_vts_url
 
-    cts_vts_url = re.sub('\/+', '/', cts_vts_url)
     if cts_vts_url.find('aosp-master-throttled') >= 0:
         # http://testdata.linaro.org/lkft/aosp-stable/aosp-master-throttled/7384311/test_suites_arm64/android-cts.zip
+        cts_vts_url = re.sub('\/+', '/', cts_vts_url)
         return "%s#%s" % (cts_vts_url.split('/')[-4], cts_vts_url.split('/')[-3])
+    elif cts_vts_url.find('protected'):
+        # http://snapshots.linaro.org/android/lkft/protected/aosp/android-cts/84/android-cts.zip
+        base_url = '/'.join(cts_vts_url.split('/')[:-1])
+        cts_fingerprint = download_url_content("%s/%s" % (base_url, 'build_fingerprint.txt'))
+        if len(cts_fingerprint) > 0:
+            cts_fingerprint = cts_fingerprint.strip().split(":")[1]
+        if len(cts_fingerprint) > 0:
+            return "EAP-Android12#%s" % cts_fingerprint
+        else:
+            cts_vts_url = re.sub('\/+', '/', cts_vts_url)
+            return "EAP-Android12#%s" % cts_vts_url.split('/')[-2]
+    else:
+        cts_vts_url = re.sub('\/+', '/', cts_vts_url)
 
     return cts_vts_url.split('/')[-2]
 
