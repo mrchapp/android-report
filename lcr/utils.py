@@ -55,3 +55,15 @@ def download_urllib(url, path):
     if not check_dict['file_not_exist']:
         logger.info("File is saved to %s" % path)
     return check_dict['file_not_exist']
+
+
+def download_url_content(request_url):
+    content = ""
+    r = requests.get(request_url)
+    if not r.ok and r.status_code == 404:
+        logger.info("failed to get content because the url %s is not found" % request_url)
+    elif not r.ok or r.status_code != 200:
+        logger.info("Failed %s %s %s" % (r.url, r.reason, r.status_code))
+    else:
+        content = r.text
+    return content
