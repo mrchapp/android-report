@@ -1603,7 +1603,7 @@ def get_cts_vts_version_from(cts_vts_url):
         # http://testdata.linaro.org/lkft/aosp-stable/aosp-master-throttled/7384311/test_suites_arm64/android-cts.zip
         cts_vts_url = re.sub('\/+', '/', cts_vts_url)
         return "%s#%s" % (cts_vts_url.split('/')[-4], cts_vts_url.split('/')[-3])
-    elif cts_vts_url.find('protected'):
+    elif cts_vts_url.find('protected') >= 0:
         # http://snapshots.linaro.org/android/lkft/protected/aosp/android-cts/84/android-cts.zip
         base_url = '/'.join(cts_vts_url.split('/')[:-1])
         cts_fingerprint = download_url_content("%s/%s" % (base_url, 'build_fingerprint.txt'))
