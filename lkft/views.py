@@ -299,12 +299,17 @@ def download_attachments_save_result(jobs=[]):
                 extract_save_result(tar_f, result_file_path)
                 os.unlink(tar_f)
 
-            logger.info("Before call save_tradeded_results_to_database: %s %s" % (job_url, job.get('name')))
-            save_tradeded_results_to_database(result_file_path, job, report_job)
-            logger.info("After call save_tradeded_results_to_database: %s %s" % (job_url, job.get('name')))
+            if os.path.exists(result_file_path):
+                logger.info("Before call save_tradeded_results_to_database: %s %s" % (job_url, job.get('name')))
+                save_tradeded_results_to_database(result_file_path, job, report_job)
+                logger.info("After call save_tradeded_results_to_database: %s %s" % (job_url, job.get('name')))
 
-            job_numbers = get_testcases_number_for_job(job)
-            qa_report.TestNumbers.setHashValueForDatabaseRecord(report_job, job_numbers)
+                job_numbers = get_testcases_number_for_job(job)
+                qa_report.TestNumbers.setHashValueForDatabaseRecord(report_job, job_numbers)
+            else:
+                # for cases that test_result.xml does not exist in the tradefed result attachment zip file
+                logger.info("Failed to save the test_result.xml file locally for : %s %s" % (job_url, job.get('name')))
+                continue
         else:
             # for other jobs like the boot job and other benchmark jobs
             pass
