@@ -193,7 +193,7 @@ class ReportJob(models.Model):
 class TestSuite(models.Model):
     report_job = models.ForeignKey(ReportJob)
 
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=256, db_index=True)
     abi = models.CharField(max_length=16, null=True)
     done = models.BooleanField(default=False)
     number_pass = models.IntegerField(default=0)
@@ -201,13 +201,17 @@ class TestSuite(models.Model):
 
 
 class TestCase(models.Model):
-    name = models.CharField(max_length=256)
-    result = models.CharField(max_length=64)
-    measurement = models.DecimalField( max_digits=20, decimal_places=2, null=True)
+    # multiple index might be enabled later
+    # when the problem is not improved too much
+    # or get worse again when the data gets huge
+    # https://docs.djangoproject.com/en/3.2/ref/models/options/#indexes
+    name = models.CharField(max_length=256, db_index=True)
+    result = models.CharField(max_length=64, db_index=True)
+    measurement = models.DecimalField(max_digits=20, decimal_places=2, null=True)
     unit = models.CharField(max_length=128, null=True)
-    suite = models.CharField(max_length=256)
-    job_id = models.CharField(max_length=16)
-    lava_nick = models.CharField(max_length=64)
+    suite = models.CharField(max_length=256, db_index=True)
+    job_id = models.CharField(max_length=16, db_index=True)
+    lava_nick = models.CharField(max_length=64, db_index=True)
 
     # failure should be deleted when this testcase deleted
     testsuite = models.ForeignKey(TestSuite, null=True)
