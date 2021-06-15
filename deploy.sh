@@ -116,6 +116,14 @@ python3 manage.py runserver 0.0.0.0:8000
 # cat jobs.txt |awk '{print $2}' >job-ids.txt
 # sqlite3 db.sqlite3 "select * from report_testcase where job_id = 99965 ORDER BY name;"
 # sqlite3 db.sqlite3 "delete from report_testcase where job_id = 99859;"
+# https://www.sqlite.org/lang.html
+# https://www.sqlitetutorial.net/sqlite-index/
+#   CREATE [UNIQUE] INDEX index_name ON table_name(column_list);
+#   CREATE INDEX idx_contacts_name ON contacts (first_name, last_name);
+#   PRAGMA index_list('table_name');
+#   PRAGMA index_info('index_name');
+#   DROP INDEX [IF EXISTS] index_name;
+#   EXPLAIN QUERY PLAN sql_sentence
 
 
 ## with new db.sqlite3 file
