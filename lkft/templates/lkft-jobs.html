@@ -35,12 +35,16 @@
 <tr>
     <th> LKFT Build</th> <td><a href="{{ build_meta.build_url }}">{{ build_meta.build_url }}</a></td>
 </tr>
+{% if build_meta.cts_url %}
 <tr>
     <th> CTS Package</th> <td><a href="{{ build_meta.cts_url }}">{{ build_meta.cts_version }}</a></td>
 </tr>
+{% endif %}
+{% if build_meta.vts_url %}
 <tr>
     <th> VTS Package</th> <td><a href="{{ build_meta.vts_url }}">{{ build_meta.vts_version }}</a></td>
 </tr>
+{% endif %}
 <tr>
     <th> Kernel Tool Chain</th> <td><a href="{{ build_meta.toolchain }}">{{ build_meta.toolchain }}</a></td>
 </tr>
