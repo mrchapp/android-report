@@ -148,7 +148,7 @@ class ReportBuild(models.Model):
 class ReportJob(models.Model):
     job_name = models.CharField(max_length=100)
     job_url = models.URLField(null=True)
-    attachment_url = models.URLField(null=True)
+    attachment_url = models.URLField(null=True, blank=True)
     results_cached = models.BooleanField(default=False)
 
     qa_job_id = models.IntegerField(default=0)
