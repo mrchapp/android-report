@@ -24,3 +24,4 @@ wget -c https://raw.githubusercontent.com/tom-gall/android-qa-classifier-data/ma
 ${dir_parent}/../workspace-python3/bin/python ${dir_parent}/manage.py kernelreport "${ker_version}" ${f_report} /tmp/flakey.txt "${exact_ker_version}"
 cat ${f_report}.scribble >> ${f_report}
 echo "Please check the file of ${f_report} for report"
+rm -f ${f_report}.scribble
