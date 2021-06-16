@@ -1595,7 +1595,7 @@ def list_all_jobs(request):
                 )
 
 
-def get_cts_vts_version_from(cts_vts_url):
+def get_cts_vts_version_from(cts_vts_url, default_cts_vts_version=""):
     if cts_vts_url is None or len(cts_vts_url) ==0:
         return cts_vts_url
 
@@ -1605,15 +1605,11 @@ def get_cts_vts_version_from(cts_vts_url):
         return "%s#%s" % (cts_vts_url.split('/')[-4], cts_vts_url.split('/')[-3])
     elif cts_vts_url.find('protected') >= 0:
         # http://snapshots.linaro.org/android/lkft/protected/aosp/android-cts/84/android-cts.zip
-        base_url = '/'.join(cts_vts_url.split('/')[:-1])
-        cts_fingerprint = download_url_content("%s/%s" % (base_url, 'build_fingerprint.txt'))
-        if len(cts_fingerprint) > 0:
-            cts_fingerprint = cts_fingerprint.strip().split(":")[1]
-        if len(cts_fingerprint) > 0:
-            return "EAP-Android12#%s" % cts_fingerprint
-        else:
-            cts_vts_url = re.sub('\/+', '/', cts_vts_url)
-            return "EAP-Android12#%s" % cts_vts_url.split('/')[-2]
+        if len(default_cts_vts_version.split('#')) == 2 and len(default_cts_vts_version.split('/')) == 3:
+            # for case like "EAP-Android12#S/SP1A.210605.001/88"
+            return default_cts_vts_version
+        cts_vts_url = re.sub('\/+', '/', cts_vts_url)
+        return "EAP-Android12#%s" % cts_vts_url.split('/')[-2]
     else:
         cts_vts_url = re.sub('\/+', '/', cts_vts_url)
 
@@ -1635,9 +1631,9 @@ def get_build_metadata(build_metadata_url=None, project_name=None):
     build_metadata['toolchain'] = build_metadata_raw.get('toolchain')
 
     build_metadata['vts_url'] = build_metadata_raw.get('vts-url')
-    build_metadata['vts_version'] = get_cts_vts_version_from(build_metadata_raw.get('vts-url'))
+    build_metadata['vts_version'] = get_cts_vts_version_from(build_metadata_raw.get('vts-url'), default_cts_vts_version=build_metadata_raw.get('vts-version'))
     build_metadata['cts_url'] = build_metadata_raw.get('cts-url')
-    build_metadata['cts_version'] = get_cts_vts_version_from(build_metadata_raw.get('cts-url'))
+    build_metadata['cts_version'] = get_cts_vts_version_from(build_metadata_raw.get('cts-url'), default_cts_vts_version=build_metadata_raw.get('cts-version'))
 
     return build_metadata
 
