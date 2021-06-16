@@ -871,22 +871,38 @@ def find_antiregressions(goodruns):
 """
 
 def print_androidresultheader(output, project_info, run, priorrun):
-        output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - " )
-        output.write("Current:" + run['version'] + "  Prior:" + priorrun['version']+"\n")
+    output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - " )
+    output.write("Current:" + run['version'] + "  Prior:" + priorrun['version']+"\n")
 
-        build_metadata = get_build_metadata(build_metadata_url=run.get('metadata'))
-        prior_build_metadata = get_build_metadata(build_metadata_url=priorrun.get('metadata'))
-        output.write("    " + "CTS Version:" + " - " )
-        if build_metadata.get('cts_version', 'UNKNOWN') == prior_build_metadata.get('cts_version', 'UNKNOWN'):
-            output.write("Current:" + build_metadata.get('cts_version', 'UNKNOWN') + " == Prior:" + prior_build_metadata.get('cts_version', 'UNKNOWN')+"\n")
-        else:
-            output.write("Current:" + build_metadata.get('cts_version', 'UNKNOWN') + " != Prior:" + prior_build_metadata.get('cts_version', 'UNKNOWN')+"\n")
+    build_metadata = get_build_metadata(build_metadata_url=run.get('metadata'))
+    prior_build_metadata = get_build_metadata(build_metadata_url=priorrun.get('metadata'))
 
-        output.write("    " + "VTS Version:" + " - " )
-        if build_metadata.get('vts_version', 'UNKNOWN') == prior_build_metadata.get('vts_version', 'UNKNOWN'):
-            output.write("Current:" + build_metadata.get('vts_version', 'UNKNOWN') + " == Prior:" + prior_build_metadata.get('vts_version', 'UNKNOWN')+"\n")
+
+    if build_metadata.get('gsi_fingerprint', None):
+        output.write("    " + "GSI Fingerprint:" + " - " )
+        if build_metadata.get('gsi_fingerprint') == prior_build_metadata.get('gsi_fingerprint', 'UNKNOWN'):
+            output.write("Current:" + build_metadata.get('gsi_fingerprint') + " == Prior:" + prior_build_metadata.get('gsi_fingerprint', 'UNKNOWN')+"\n")
         else:
-            output.write("Current:" + build_metadata.get('vts_version', 'UNKNOWN') + " != Prior:" + prior_build_metadata.get('vts_version', 'UNKNOWN')+"\n")
+            output.write("Current:" + build_metadata.get('gsi_fingerprint') + " != Prior:" + prior_build_metadata.get('gsi_fingerprint', 'UNKNOWN')+"\n")
+
+    if build_metadata.get('vendor_fingerprint', None):
+        output.write("    " + "Vendor Fingerprint:" + " - " )
+        if build_metadata.get('vendor_fingerprint') == prior_build_metadata.get('vendor_fingerprint', 'UNKNOWN'):
+            output.write("Current:" + build_metadata.get('vendor_fingerprint') + " == Prior:" + prior_build_metadata.get('vendor_fingerprint', 'UNKNOWN')+"\n")
+        else:
+            output.write("Current:" + build_metadata.get('vendor_fingerprint') + " != Prior:" + prior_build_metadata.get('vendor_fingerprint', 'UNKNOWN')+"\n")
+
+    output.write("    " + "CTS Version:" + " - " )
+    if build_metadata.get('cts_version', 'UNKNOWN') == prior_build_metadata.get('cts_version', 'UNKNOWN'):
+        output.write("Current:" + build_metadata.get('cts_version', 'UNKNOWN') + " == Prior:" + prior_build_metadata.get('cts_version', 'UNKNOWN')+"\n")
+    else:
+        output.write("Current:" + build_metadata.get('cts_version', 'UNKNOWN') + " != Prior:" + prior_build_metadata.get('cts_version', 'UNKNOWN')+"\n")
+
+    output.write("    " + "VTS Version:" + " - " )
+    if build_metadata.get('vts_version', 'UNKNOWN') == prior_build_metadata.get('vts_version', 'UNKNOWN'):
+        output.write("Current:" + build_metadata.get('vts_version', 'UNKNOWN') + " == Prior:" + prior_build_metadata.get('vts_version', 'UNKNOWN')+"\n")
+    else:
+        output.write("Current:" + build_metadata.get('vts_version', 'UNKNOWN') + " != Prior:" + prior_build_metadata.get('vts_version', 'UNKNOWN')+"\n")
 
 
 def add_unique_kernel(unique_kernels, kernel_version, combo, unique_kernel_info):

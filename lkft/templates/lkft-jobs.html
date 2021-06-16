@@ -30,8 +30,27 @@
 <h2>Build Metadata Info:</h2>
 <table border="1">
 <tr>
-    <th> Android Reference Build</th> <td><a href="{{ build_meta.android_url }}">{{ build_meta.android_version }}</a></td>
+    <th> Android Reference Build</th>
+    <td>
+        {% if build_meta.vendor_fingerprint %}
+            <a href="{{ build_meta.android_url }}">{{ build_meta.vendor_fingerprint }}</a>
+        {% else %}
+            <a href="{{ build_meta.android_url }}">{{ build_meta.android_version }}</a>
+        {% endif %}
+    </td>
 </tr>
+{% if build_meta.gsi_fingerprint %}
+<tr>
+    <th> GSI Fingerprint</th>
+    <td>
+        {% if build_meta.gsi_url %}
+            <a href="{{ build_meta.gsi_url }}">{{ build_meta.gsi_fingerprint }}</a>
+        {% else %}
+            {{ build_meta.gsi_fingerprint }}
+        {% endif %}
+    </td>
+</tr>
+{% endif %}
 <tr>
     <th> LKFT Build</th> <td><a href="{{ build_meta.build_url }}">{{ build_meta.build_url }}</a></td>
 </tr>
