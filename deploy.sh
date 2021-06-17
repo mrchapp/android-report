@@ -37,10 +37,10 @@ sudo python3 get-pip.py
 sudo apt-get update
 #sudo apt-get install python-django-auth-ldap
 ## dependency for python-ldap
-sudo apt-get install libsasl2-dev python-dev python3-dev libldap2-dev libssl-dev gcc libjpeg-dev libpq-dev
+sudo apt-get install -y libsasl2-dev python-dev python3-dev libldap2-dev libssl-dev gcc libjpeg-dev libpq-dev
 #sudo apt-get install libtiff5-dev libjpeg8-dev zlib1g-dev libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev tcl8.6-dev tk8.6-dev python-tk
 # install for apache and wsgi packages
-sudo apt-get install python3-pip apache2 libapache2-mod-wsgi-py3
+sudo apt-get install -y python3-pip apache2 libapache2-mod-wsgi-py3
 # https://virtualenv.pypa.io/en/stable/
 sudo pip install virtualenv
 virtualenv --python=python3 ${virenv_dir}
