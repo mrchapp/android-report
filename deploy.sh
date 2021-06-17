@@ -75,6 +75,9 @@ if [ -d lcr-report ]; then
     cd lcr-report && git pull && cd -
 else
     git clone https://github.com/liuyq/android-report.git lcr-report
+    if [ -v SECRET_KEY ]; then
+      echo "SECRET_KEY = '${SECRET_KEY}'" >> lcr-report/lcr/settings.py
+    fi
 fi
 
 cd lcr-report
