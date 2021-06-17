@@ -32,10 +32,18 @@
 <tr>
     <th> Android Reference Build</th>
     <td>
-        {% if build_meta.vendor_fingerprint %}
-            <a href="{{ build_meta.android_url }}">{{ build_meta.vendor_fingerprint }}</a>
+        {% if build_meta.android_url %}
+            {% if build_meta.vendor_fingerprint %}
+                <a href="{{ build_meta.android_url }}">{{ build_meta.vendor_fingerprint }}</a>
+            {% else %}
+                <a href="{{ build_meta.android_url }}">{{ build_meta.android_version }}</a>
+            {% endif %}
         {% else %}
-            <a href="{{ build_meta.android_url }}">{{ build_meta.android_version }}</a>
+            {% if build_meta.vendor_fingerprint %}
+                {{ build_meta.vendor_fingerprint }}
+            {% else %}
+                {{ build_meta.android_version }}
+            {% endif %}
         {% endif %}
     </td>
 </tr>
@@ -51,9 +59,13 @@
     </td>
 </tr>
 {% endif %}
+
+{% if build_meta.build_url %}
 <tr>
     <th> LKFT Build</th> <td><a href="{{ build_meta.build_url }}">{{ build_meta.build_url }}</a></td>
 </tr>
+{% endif %}
+
 {% if build_meta.cts_url %}
 <tr>
     <th> CTS Package</th> <td><a href="{{ build_meta.cts_url }}">{{ build_meta.cts_version }}</a></td>
@@ -64,9 +76,12 @@
     <th> VTS Package</th> <td><a href="{{ build_meta.vts_url }}">{{ build_meta.vts_version }}</a></td>
 </tr>
 {% endif %}
+
+{% if build_meta.toolchain %}
 <tr>
     <th> Kernel Tool Chain</th> <td><a href="{{ build_meta.toolchain }}">{{ build_meta.toolchain }}</a></td>
 </tr>
+{% endif %}
 </table>
 </div>
 {% endif %}
