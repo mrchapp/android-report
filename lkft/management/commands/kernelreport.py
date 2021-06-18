@@ -40,14 +40,14 @@ qa_report_api = qa_report.QAReportApi(qa_report_def.get('domain'), qa_report_def
 jenkins_api = qa_report.JenkinsApi('ci.linaro.org', None)
 
 rawkernels = {
-   '4.4':[
+    '4.4':[
             '4.4p-10.0-gsi-hikey',
             '4.4p-9.0-hikey',
             '4.4o-10.0-gsi-hikey',
             '4.4o-9.0-lcr-hikey',
             '4.4o-8.1-hikey',
             ],
-   '4.9':[ 
+    '4.9':[
             '4.9q-10.0-gsi-hikey960',
             '4.9q-10.0-gsi-hikey',
             '4.9p-10.0-gsi-hikey960',
@@ -59,7 +59,7 @@ rawkernels = {
             '4.9o-9.0-lcr-hikey',
             '4.9o-8.1-hikey', 
             ],
-   '4.14':[ 
+    '4.14':[
             '4.14-stable-master-hikey960-lkft',
             '4.14-stable-master-hikey-lkft',
             '4.14-stable-aosp-x15',
@@ -70,12 +70,12 @@ rawkernels = {
             '4.14p-9.0-hikey960',
             '4.14p-9.0-hikey',
             ],
-   '4.19':[ 
+    '4.19':[
             '4.19q-10.0-gsi-hikey960',
             '4.19q-10.0-gsi-hikey',
             '4.19-stable-aosp-x15',
             ],
-   '5.4':[ 
+    '5.4':[
             '5.4-gki-aosp-master-db845c',
             '5.4-gki-aosp-master-hikey960',
             '5.4-aosp-master-x15',
@@ -84,284 +84,316 @@ rawkernels = {
             '5.4-gki-android11-android11-hikey960',
             '5.4-gki-android11-android11-db845c',
             ],
-   '5.10':[
+    '5.10':[
             '5.10-gki-android13-aosp-master-db845c',
             '5.10-gki-android13-aosp-master-hikey960',
             '5.10-gki-aosp-master-db845c',
             '5.10-gki-aosp-master-hikey960',
             ],
-   'EAP510':[ 
+    'EAP510':[
             '5.10-gki-private-android12-db845c',
             '5.10-gki-private-android12-hikey960',
             ],
-   'EAP54':[ 
+    'EAP54':[
             '5.4-gki-private-android12-db845c',
             '5.4-gki-private-android12-hikey960',
+            ],
+    'mainline':[
+            'mainline-gki-aosp-master-db845c',
+            'mainline-gki-aosp-master-hikey960',
+            'mainline-gki-aosp-master-hikey',
+             'mainline-gki-aosp-master-x15',
             ],
 }
 
 projectids = {
-   '4.4o-8.1-hikey': 
+    '4.4o-8.1-hikey':
                     {'project_id': 86, 
                      'hardware': 'HiKey',
                      'OS' : 'LCR-Android8',
                      'baseOS' : 'Android8',
                      'kern' : '4.4',
                      'branch' : 'Android-4.4-o',}, 
-   '4.4o-9.0-lcr-hikey':
+    '4.4o-9.0-lcr-hikey':
                     {'project_id': 253, 
                      'hardware': 'HiKey',
                      'OS' : 'LCR-Android9',
                      'baseOS' : 'Android9',
                      'kern' : '4.4',
                      'branch' : 'Android-4.4-o',},
-   '4.4o-10.0-gsi-hikey':
+    '4.4o-10.0-gsi-hikey':
                     {'project_id': 254, 
                      'hardware': 'HiKey',
                      'OS' : 'Android10',
                      'kern' : '4.4',
                      'branch' : 'Android-4.4-o',},
-   '4.4p-9.0-hikey':
+    '4.4p-9.0-hikey':
                     {'project_id': 123, 
                      'hardware': 'HiKey',
                      'OS' : 'LCR-Android9',
                      'baseOS' : 'Android9',
                      'kern' : '4.4',
                      'branch' : 'Android-4.4-p',},
-   '4.4p-10.0-gsi-hikey':
+    '4.4p-10.0-gsi-hikey':
                     {'project_id': 225, 
                      'hardware': 'HiKey',
                      'OS' : 'Android10',
                      'kern' : '4.4',
                      'branch' : 'Android-4.4-p',},
-   '4.9o-8.1-hikey':
+    '4.9o-8.1-hikey':
                     {'project_id': 87, 
                      'hardware': 'HiKey',
                      'OS' : 'LCR-Android8',
                      'baseOS' : 'Android8',
                      'kern' : '4.9',
                      'branch' : 'Android-4.9-o',},
-   '4.9o-9.0-lcr-hikey':
+    '4.9o-9.0-lcr-hikey':
                     {'project_id': 250, 
                      'hardware': 'HiKey',
                      'OS' : 'LCR-Android9',
                      'baseOS' : 'Android9',
                      'kern' : '4.9',
                      'branch' : 'Android-4.9-o',},
-   '4.9o-10.0-gsi-hikey':
+    '4.9o-10.0-gsi-hikey':
                     {'project_id': 251, 
                      'hardware': 'HiKey',
                      'OS' : 'Android10',
                      'kern' : '4.9',
                      'branch' : 'Android-4.9-o',},
-   '4.9o-10.0-gsi-hikey960':
+    '4.9o-10.0-gsi-hikey960':
                     {'project_id': 255, 
                      'hardware': 'HiKey960',
                      'OS' : 'Android10',
                      'kern' : '4.9',
                      'branch' : 'Android-4.9-o',},
-   '4.9p-9.0-hikey':
+    '4.9p-9.0-hikey':
                     {'project_id': 122, 
                      'hardware': 'HiKey',
                      'OS' : 'LCR-Android9',
                      'baseOS' : 'Android9',
                      'kern' : '4.9',
                      'branch' : 'Android-4.9-p',},
-   '4.9p-9.0-hikey960':
+    '4.9p-9.0-hikey960':
                     {'project_id': 179,
                      'hardware': 'HiKey960',
                      'OS' : 'LCR-Android9',
                      'baseOS' : 'Android9',
                      'kern' : '4.9',
                      'branch' : 'Android-4.9-p',},
-   '4.9p-10.0-gsi-hikey':
+    '4.9p-10.0-gsi-hikey':
                     {'project_id': 223,
                      'hardware': 'HiKey',
                      'OS' : 'Android10',
                      'kern' : '4.9',
                      'branch' : 'Android-4.9-p',},
-   '4.9p-10.0-gsi-hikey960':
+    '4.9p-10.0-gsi-hikey960':
                     {'project_id': 222, 
                      'hardware': 'HiKey960',
                      'OS' : 'Android10',
                      'kern' : '4.9',
                      'branch' : 'Android-4.9-p',},
-   '4.9q-10.0-gsi-hikey':
+    '4.9q-10.0-gsi-hikey':
                     {'project_id': 212, 
                      'hardware': 'HiKey',
                      'OS' : 'Android10',
                      'kern' : '4.9',
                      'branch' : 'Android-4.9-q',},
-   '4.9q-10.0-gsi-hikey960':
+    '4.9q-10.0-gsi-hikey960':
                     {'project_id': 213, 
                      'hardware': 'HiKey960',
                      'OS' : 'Android10',
                      'kern' : '4.9',
                      'branch' : 'Android-4.9-q',},
-   '4.14p-9.0-hikey':
+    '4.14p-9.0-hikey':
                     {'project_id': 121, 
                      'hardware': 'HiKey',
                      'OS' : 'LCR-Android9',
                      'baseOS' : 'Android9',
                      'kern' : '4.14',
                      'branch' : 'Android-4.14-p',},
-   '4.14p-9.0-hikey960':
+    '4.14p-9.0-hikey960':
                     {'project_id': 177, 
                      'hardware': 'HiKey960',
                      'OS' : 'LCR-Android9',
                      'baseOS' : 'Android9',
                      'kern' : '4.14',
                      'branch' : 'Android-4.14-p',},
-   '4.14p-10.0-gsi-hikey':
+    '4.14p-10.0-gsi-hikey':
                     {'project_id': 220, 
                      'hardware': 'HiKey',
                      'OS' : 'Android10',
                      'kern' : '4.14',
                      'branch' : 'Android-4.14-p',},
-   '4.14p-10.0-gsi-hikey960':
+    '4.14p-10.0-gsi-hikey960':
                     {'project_id': 221, 
                      'hardware': 'HiKey960',
                      'OS' : 'Android10',
                      'kern' : '4.14',
                      'branch' : 'Android-4.14-p',},
-   '4.14q-10.0-gsi-hikey':
+    '4.14q-10.0-gsi-hikey':
                     {'project_id': 211, 
                      'hardware': 'HiKey',
                      'OS' : 'Android10',
                      'kern' : '4.14',
                      'branch': 'Android-4.14-q',},
-   '4.14q-10.0-gsi-hikey960':
+    '4.14q-10.0-gsi-hikey960':
                     {'project_id': 214,
                      'hardware': 'HiKey960',
                      'OS' : 'Android10',
                      'kern' : '4.14',
                      'branch' : 'Android-4.14-q',},
-   '4.14-stable-aosp-x15':
+    '4.14-stable-aosp-x15':
                     {'project_id': 320,
                      'hardware': 'X15',
                      'OS' : 'AOSP',
                      'kern' : '4.14',
                      'branch' : 'Android-4.14-stable',},
-   '4.14-stable-master-hikey-lkft':
+    '4.14-stable-master-hikey-lkft':
                     {'project_id': 297, 
                      'hardware': 'HiKey',
                      'OS' : 'AOSP',
                      'kern' : '4.14',
                      'branch': 'Android-4.14-stable',},
-   '4.14-stable-master-hikey960-lkft':
+    '4.14-stable-master-hikey960-lkft':
                     {'project_id': 298, 
                      'hardware': 'HiKey960',
                      'OS' : 'AOSP',
                      'kern' : '4.14',
                      'branch': 'Android-4.14-stable',},
-   '4.19q-10.0-gsi-hikey':
+    '4.19q-10.0-gsi-hikey':
                     {'project_id': 210, 
                      'hardware': 'HiKey',
                      'OS' : 'Android10',
                      'kern' : '4.19',
                      'branch' : 'Android-4.19-q',},
-   '4.19q-10.0-gsi-hikey960':
+    '4.19q-10.0-gsi-hikey960':
                     {'project_id': 215, 
                      'hardware': 'HiKey960',
                      'OS' : 'Android10',
                      'kern' : '4.19',
                      'branch' : 'Android-4.19-q',},
-   '4.19-stable-aosp-x15':
+    '4.19-stable-aosp-x15':
                     {'project_id': 335, 
                      'hardware': 'x15',
                      'OS' : 'AOSP',
                      'kern' : '4.19',
                      'branch' : 'Android-4.19-stable',},
-   '5.4-gki-aosp-master-hikey960':
+    '5.4-gki-aosp-master-hikey960':
                     {'project_id': 257, 
                      'hardware': 'HiKey960',
                      'OS' : 'AOSP',
                      'kern' : '5.4',
                      'branch' : 'Android-5.4',},
-   '5.4-gki-aosp-master-db845c':
+    '5.4-gki-aosp-master-db845c':
                     {'project_id': 261,
                      'hardware': 'db845',
                      'OS' : 'AOSP',
                      'kern' : '5.4',
                      'branch' : 'Android-5.4',},
-   '5.4-aosp-master-x15':
+    '5.4-aosp-master-x15':
                     {'project_id': 339,
                      'hardware': 'x15',
                      'OS' : 'AOSP',
                      'kern' : '5.4',
                      'branch' : 'Android-5.4',},
-   '5.4-lts-gki-android11-android11-db845c':
+    '5.4-lts-gki-android11-android11-db845c':
                     {'project_id': 524,
                      'hardware': 'db845',
                      'OS' : 'Android11',
                      'kern' : '5.4',
                      'branch' : 'Android-5.4',},
-   '5.4-lts-gki-android11-android11-hikey960':
+    '5.4-lts-gki-android11-android11-hikey960':
                     {'project_id': 519,
                      'hardware': 'hikey960',
                      'OS' : 'Android11',
                      'kern' : '5.4',
                      'branch' : 'Android-5.4',},
-   '5.4-gki-android11-android11-db845c':
+    '5.4-gki-android11-android11-db845c':
                     {'project_id': 414,
                      'hardware': 'db845',
                      'OS' : 'Android11',
                      'kern' : '5.4',
                      'branch' : 'Android-5.4',},
-   '5.4-gki-android11-android11-hikey960':
+    '5.4-gki-android11-android11-hikey960':
                     {'project_id': 409,
                      'hardware': 'hikey960',
                      'OS' : 'Android11',
                      'kern' : '5.4',
                      'branch' : 'Android-5.4',},
-   '5.10-gki-aosp-master-hikey960':
+    '5.10-gki-aosp-master-hikey960':
                     {'project_id': 607,
                      'hardware': 'HiKey960',
                      'OS' : 'AOSP',
                      'kern' : '5.10',
                      'branch' : 'Android12-5.10',},
-   '5.10-gki-aosp-master-db845c':
+    '5.10-gki-aosp-master-db845c':
                     {'project_id': 606,
                      'hardware': 'db845',
                      'OS' : 'AOSP',
                      'kern' : '5.10',
                      'branch' : 'Android12-5.10',},
-   '5.10-gki-android13-aosp-master-hikey960':
+    '5.10-gki-android13-aosp-master-hikey960':
                     {'project_id': 731,
                      'hardware': 'HiKey960',
                      'OS' : 'AOSP',
                      'kern' : '5.10',
                      'branch' : 'Android13-5.10',},
-   '5.10-gki-android13-aosp-master-db845c':
+    '5.10-gki-android13-aosp-master-db845c':
                     {'project_id': 730,
                      'hardware': 'db845',
                      'OS' : 'AOSP',
                      'kern' : '5.10',
                      'branch' : 'Android13-5.10',},
-   '5.10-gki-private-android12-db845c':
+    '5.10-gki-private-android12-db845c':
                     {'project_id': 617,
                      'hardware': 'db845',
                      'OS' : 'Android12',
                      'kern' : '5.10',
                      'branch' : 'Android12-5.10',},
-   '5.10-gki-private-android12-hikey960':
+    '5.10-gki-private-android12-hikey960':
                     {'project_id': 616,
                      'hardware': 'HiKey960',
                      'OS' : 'Android12',
                      'kern' : '5.10',
                      'branch' : 'Android-5.10',},
-   '5.4-gki-private-android12-db845c':
+    '5.4-gki-private-android12-db845c':
                     {'project_id': 620,
                      'hardware': 'db845',
                      'OS' : 'Android12',
                      'kern' : '5.4',
                      'branch' : 'Android-5.4',},
-   '5.4-gki-private-android12-hikey960':
+    '5.4-gki-private-android12-hikey960':
                     {'project_id': 621,
                      'hardware': 'HiKey960',
                      'OS' : 'Android12',
                      'kern' : '5.4',
                      'branch' : 'Android-5.4',},
+
+    'mainline-gki-aosp-master-db845c':
+                    {'project_id': 236,
+                     'hardware': 'db845',
+                     'OS' : 'AOSP',
+                     'kern' : 'android-mainline',
+                     'branch' : 'android-mainline',},
+    'mainline-gki-aosp-master-hikey960':
+                    {'project_id': 219,
+                     'hardware': 'HiKey960',
+                     'OS' : 'AOSP',
+                     'kern' : 'android-mainline',
+                     'branch' : 'android-mainline',},
+    'mainline-gki-aosp-master-hikey':
+                    {'project_id': 216,
+                     'hardware': 'Hikey',
+                     'OS' : 'AOSP',
+                     'kern' : 'android-mainline',
+                     'branch' : 'android-mainline',},
+    'mainline-gki-aosp-master-x15':
+                    {'project_id': 237,
+                     'hardware': 'x15',
+                     'OS' : 'AOSP',
+                     'kern' : 'android-mainline',
+                     'branch' : 'android-mainline',},
+
 }
 
 def do_boilerplate(output):
@@ -493,6 +525,9 @@ def versiontoMME(versionString):
         versionDict['Major'] = tokens[0]
         versionDict['Minor'] = tokens[1]
         versionDict['Extra'] = tokens[2]
+
+    if len(tokens) >= 4 and tokens[3].startswith('rc'):
+        versionDict['rc'] = tokens[3]
 
     return versionDict
 
@@ -733,8 +768,13 @@ def find_best_two_runs(builds, project_name, project, exact):
                 # print "baseset"
             elif bailaftertwo == 1 :
                 nextVersionDict = versiontoMME(build['version'])
-                if nextVersionDict['Extra'] == baseVersionDict['Extra'] :
-                    continue
+                if nextVersionDict['Extra'] == baseVersionDict['Extra']:
+                    nextRc = nextVersionDict.get('rc')
+                    baseRc = baseVersionDict.get('rc')
+                    if (nextRc is None and baseRc is None) \
+                        or (nextRc is not None and baseRc is not None and nextRc == baseRc):
+                        continue
+
             tallyNumbers(build, jobTransactionStatus)
 
             if nextVersionDict is not None:
@@ -881,28 +921,28 @@ def print_androidresultheader(output, project_info, run, priorrun):
     if build_metadata.get('gsi_fingerprint', None):
         output.write("    " + "GSI Fingerprint:" + " - " )
         if build_metadata.get('gsi_fingerprint') == prior_build_metadata.get('gsi_fingerprint', 'UNKNOWN'):
-            output.write("Current:" + build_metadata.get('gsi_fingerprint') + " == Prior:" + prior_build_metadata.get('gsi_fingerprint', 'UNKNOWN')+"\n")
+            output.write("Current:" + build_metadata.get('gsi_fingerprint') + " == Prior:" + prior_build_metadata.get('gsi_fingerprint', 'UNKNOWN') + "\n")
         else:
-            output.write("Current:" + build_metadata.get('gsi_fingerprint') + " != Prior:" + prior_build_metadata.get('gsi_fingerprint', 'UNKNOWN')+"\n")
+            output.write("Current:" + build_metadata.get('gsi_fingerprint') + " != Prior:" + prior_build_metadata.get('gsi_fingerprint', 'UNKNOWN') + "\n")
 
     if build_metadata.get('vendor_fingerprint', None):
         output.write("    " + "Vendor Fingerprint:" + " - " )
         if build_metadata.get('vendor_fingerprint') == prior_build_metadata.get('vendor_fingerprint', 'UNKNOWN'):
-            output.write("Current:" + build_metadata.get('vendor_fingerprint') + " == Prior:" + prior_build_metadata.get('vendor_fingerprint', 'UNKNOWN')+"\n")
+            output.write("Current:" + build_metadata.get('vendor_fingerprint') + " == Prior:" + prior_build_metadata.get('vendor_fingerprint', 'UNKNOWN') + "\n")
         else:
-            output.write("Current:" + build_metadata.get('vendor_fingerprint') + " != Prior:" + prior_build_metadata.get('vendor_fingerprint', 'UNKNOWN')+"\n")
+            output.write("Current:" + build_metadata.get('vendor_fingerprint') + " != Prior:" + prior_build_metadata.get('vendor_fingerprint', 'UNKNOWN') + "\n")
 
     output.write("    " + "CTS Version:" + " - " )
     if build_metadata.get('cts_version', 'UNKNOWN') == prior_build_metadata.get('cts_version', 'UNKNOWN'):
-        output.write("Current:" + build_metadata.get('cts_version', 'UNKNOWN') + " == Prior:" + prior_build_metadata.get('cts_version', 'UNKNOWN')+"\n")
+        output.write("Current:" + build_metadata.get('cts_version', 'UNKNOWN') + " == Prior:" + prior_build_metadata.get('cts_version', 'UNKNOWN') + "\n")
     else:
-        output.write("Current:" + build_metadata.get('cts_version', 'UNKNOWN') + " != Prior:" + prior_build_metadata.get('cts_version', 'UNKNOWN')+"\n")
+        output.write("Current:" + build_metadata.get('cts_version', 'UNKNOWN') + " != Prior:" + prior_build_metadata.get('cts_version', 'UNKNOWN') + "\n")
 
     output.write("    " + "VTS Version:" + " - " )
     if build_metadata.get('vts_version', 'UNKNOWN') == prior_build_metadata.get('vts_version', 'UNKNOWN'):
-        output.write("Current:" + build_metadata.get('vts_version', 'UNKNOWN') + " == Prior:" + prior_build_metadata.get('vts_version', 'UNKNOWN')+"\n")
+        output.write("Current:" + build_metadata.get('vts_version', 'UNKNOWN') + " == Prior:" + prior_build_metadata.get('vts_version', 'UNKNOWN') + "\n")
     else:
-        output.write("Current:" + build_metadata.get('vts_version', 'UNKNOWN') + " != Prior:" + prior_build_metadata.get('vts_version', 'UNKNOWN')+"\n")
+        output.write("Current:" + build_metadata.get('vts_version', 'UNKNOWN') + " != Prior:" + prior_build_metadata.get('vts_version', 'UNKNOWN') + "\n")
 
 
 def add_unique_kernel(unique_kernels, kernel_version, combo, unique_kernel_info):
