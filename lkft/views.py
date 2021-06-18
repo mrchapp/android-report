@@ -1626,8 +1626,18 @@ def get_build_metadata(build_metadata_url=None, project_name=None):
     if project_name:
         build_metadata['android_version'] = get_version_from_pname(pname=project_name)
 
-    build_metadata['vendor_fingerprint'] = build_metadata_raw.get('android.build.vendor.fingerprint')
-    build_metadata['gsi_fingerprint'] = build_metadata_raw.get('android.build.gsi.fingerprint')
+    vendor_fingerprint = build_metadata_raw.get('android.build.vendor.fingerprint')
+    if vendor_fingerprint and len(vendor_fingerprint) > 0:
+        build_metadata['vendor_fingerprint'] = vendor_fingerprint
+    else:
+        build_metadata.pop('vendor_fingerprint', None)
+
+    gsi_fingerprint = build_metadata_raw.get('android.build.gsi.fingerprint')
+    if gsi_fingerprint and len(gsi_fingerprint) > 0:
+        build_metadata['gsi_fingerprint'] = gsi_fingerprint
+    else:
+        build_metadata.pop('gsi_fingerprint', None)
+
     build_metadata['gsi_url'] = build_metadata_raw.get('android.build.gsi.url')
 
     build_metadata['build_url'] = build_metadata_raw.get('build-url')
