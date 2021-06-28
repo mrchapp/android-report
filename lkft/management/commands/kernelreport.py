@@ -659,9 +659,26 @@ def find_best_two_runs(builds, project_name, project, exact):
         baseExactVersionDict = versiontoMME(exact) 
 
     for build in builds:
-        logger.info("Checking %s, %s", project_name, build.get('version'))
         if bailaftertwo == 2:
             break
+        elif bailaftertwo == 0 :
+            baseVersionDict = versiontoMME(build['version'])
+            if baseExactVersionDict is not None:
+                if baseVersionDict['Extra'] != baseExactVersionDict['Extra']:
+                    logger.info('Skip the check as it not the specified version for %s %s', project_name, build['version'])
+                    continue
+            # print "baseset"
+        elif bailaftertwo == 1 :
+            nextVersionDict = versiontoMME(build['version'])
+            if nextVersionDict['Extra'] == baseVersionDict['Extra']:
+                nextRc = nextVersionDict.get('rc')
+                baseRc = baseVersionDict.get('rc')
+                if (nextRc is None and baseRc is None) \
+                        or (nextRc is not None and baseRc is not None and nextRc == baseRc):
+                    logger.info('Skip the check as it has the same version for %s %s', project_name, build['version'])
+                    continue
+
+        logger.info("Checking for %s, %s", project_name, build.get('version'))
         build_number_passed = 0
         build_number_failed = 0
         build_number_total = 0
@@ -760,20 +777,6 @@ def find_best_two_runs(builds, project_name, project, exact):
         if jobTransactionStatus['vts'] == 'true' and jobTransactionStatus['cts'] == 'true':
             # and jobTransactionStatus['boot'] == 'true' :
             #pdb.set_trace()
-            if bailaftertwo == 0 :
-                baseVersionDict = versiontoMME(build['version'])
-                if baseExactVersionDict is not None:
-                    if baseVersionDict['Extra'] != baseExactVersionDict['Extra']:
-                        continue
-                # print "baseset"
-            elif bailaftertwo == 1 :
-                nextVersionDict = versiontoMME(build['version'])
-                if nextVersionDict['Extra'] == baseVersionDict['Extra']:
-                    nextRc = nextVersionDict.get('rc')
-                    baseRc = baseVersionDict.get('rc')
-                    if (nextRc is None and baseRc is None) \
-                        or (nextRc is not None and baseRc is not None and nextRc == baseRc):
-                        continue
 
             tallyNumbers(build, jobTransactionStatus)
 
