@@ -1596,14 +1596,15 @@ def list_all_jobs(request):
 
 
 def get_cts_vts_version_from(cts_vts_url, default_cts_vts_version=""):
-    if cts_vts_url is None or len(cts_vts_url) ==0:
+    if cts_vts_url is None or len(cts_vts_url) == 0:
         return cts_vts_url
 
-    if cts_vts_url.find('aosp-master-throttled') >= 0:
+    if cts_vts_url.find('/aosp-master-throttled/') >= 0 or \
+            cts_vts_url.find('/aosp-master/') >= 0:
         # http://testdata.linaro.org/lkft/aosp-stable/aosp-master-throttled/7384311/test_suites_arm64/android-cts.zip
         cts_vts_url = re.sub('\/+', '/', cts_vts_url)
         return "%s#%s" % (cts_vts_url.split('/')[-4], cts_vts_url.split('/')[-3])
-    elif cts_vts_url.find('protected') >= 0:
+    elif cts_vts_url.find('/protected/') >= 0:
         # http://snapshots.linaro.org/android/lkft/protected/aosp/android-cts/84/android-cts.zip
         if len(default_cts_vts_version.split('#')) == 2 and len(default_cts_vts_version.split('/')) == 3:
             # for case like "EAP-Android12#S/SP1A.210605.001/88"
