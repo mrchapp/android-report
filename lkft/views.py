@@ -213,7 +213,7 @@ def save_testcases_with_bulk_call(testcase_objs=[]):
         TestCase.objects.bulk_create(testcase_objs)
 
 
-def download_attachments_save_result(jobs=[]):
+def download_attachments_save_result(jobs=[], fetch_latest=False):
     if len(jobs) == 0:
         return
 
@@ -223,7 +223,8 @@ def download_attachments_save_result(jobs=[]):
         # cache all the jobs, otherwise the status is not correct for the build
         # if incomplete jobs are not cached.
         report_job = cache_qajob_to_database(job)
-        if report_job.results_cached and \
+        if not fetch_latest and \
+                report_job.results_cached and \
                 ( not is_cts_vts_job(job.get('name')) or report_job.modules_total > 0 ):
             # so that places that use job['numbers'] would still work, like the lkftreport script
             job['numbers'] = qa_report.TestNumbers().addWithDatabaseRecord(report_job).toHash()
@@ -1672,7 +1673,7 @@ def list_jobs(request):
     jobs_to_be_checked = classified_jobs.get('final_jobs')
     resubmitted_duplicated_jobs = classified_jobs.get('resubmitted_or_duplicated_jobs')
 
-    download_attachments_save_result(jobs=jobs)
+    download_attachments_save_result(jobs=jobs, fetch_latest=fetch_latest_from_qa_report)
     failures = {}
     resubmitted_job_urls = []
     benchmarks_res = []
