@@ -797,7 +797,7 @@ def get_project_info(project):
         project['last_build'] = last_build
 
         trigger_ci_build_url = None
-        if db_report_build:
+        if db_report_build and db_report_build.ci_build:
             db_ci_build = db_report_build.ci_build
             last_build_ci_build_url = jenkins_api.get_job_url(name=db_ci_build.name, number=db_ci_build.number)
             trigger_ci_build_url =  get_trigger_url_from_db_report_build(db_report_build)
