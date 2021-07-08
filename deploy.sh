@@ -51,18 +51,11 @@ fi
 
 # https://docs.djangoproject.com/en/1.11/topics/install/#installing-official-release
 # https://django-debug-toolbar.readthedocs.io/en/latest/changes.html
-pip install Django==1.11.17 django-debug-toolbar==1.11 pyaml django-crispy-forms python-ldap django-auth-ldap requests reportlab psycopg2 python-dateutil
-pip install matplotlib
-#pip install Django==1.11.8
+pip install -r ${instance_dir}/requirements.txt
 #pip install Django==3.0.8
-#pip install pyaml
-#pip install django-crispy-forms==1.8.1
-#pip install python-ldap # will install the 3.0 version
 # https://django-auth-ldap.readthedocs.io/en/latest/install.html
 #pip install django-auth-ldap # needs python-ldap >= 3.0
 #pip install bugzilla
-#pip install requests
-#pip install reportlab
 ## pip install Pillow
 ## pip install rst2pdf
 
