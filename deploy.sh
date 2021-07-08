@@ -1,10 +1,5 @@
 #!/bin/bash -ex
 
-if [ "/*" = "$0" ]; then
-    echo "Please run this script with absolute path"
-    exit 1
-fi
-
 if [ -n "$1" ]; then
     work_root=$1
 fi
