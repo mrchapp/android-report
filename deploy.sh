@@ -1,29 +1,27 @@
 #!/bin/bash -ex
 
-if [ "/*" = "$0" ]; then
-    echo "Please run this script with absolute path"
-    exit 1
-fi
-
 if [ -n "$1" ]; then
     work_root=$1
 fi
 if [ -d "${work_root}" ]; then
     work_root=$(cd ${work_root}; pwd)
-elif [ -d /sata250/django_instances ]; then
-    work_root="/sata250/django_instances"
-elif [ -d /SATA3/django_instances ]; then
-    work_root="/SATA3/django_instances"
-elif [ -d /home/yongqin.liu/django_instance ]; then
-    work_root="/home/yongqin.liu/django_instance"
 else
     echo "Please set the path for work_root"
     exit 1
 fi
 
-instance_name="lcr-report"
+runserver=${2:-true}
+
+instance_name="android-report"
 instance_report_app="report"
 instance_dir="${work_root}/${instance_name}"
+
+sudo apt-get update
+## dependency for python-ldap
+sudo apt-get install -y curl libsasl2-dev python-dev python3-dev libldap2-dev libssl-dev gcc libjpeg-dev libpq-dev
+#sudo apt-get install libtiff5-dev libjpeg8-dev zlib1g-dev libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev tcl8.6-dev tk8.6-dev python-tk
+# install for apache and wsgi packages
+sudo apt-get install -y python3-pip apache2 libapache2-mod-wsgi-py3
 
 virenv_dir="${work_root}/workspace-python3"
 mkdir -p ${virenv_dir}
@@ -34,13 +32,6 @@ if [ ! -f get-pip.py ]; then
 fi
 sudo python3 get-pip.py
 
-sudo apt-get update
-#sudo apt-get install python-django-auth-ldap
-## dependency for python-ldap
-sudo apt-get install -y libsasl2-dev python-dev python3-dev libldap2-dev libssl-dev gcc libjpeg-dev libpq-dev
-#sudo apt-get install libtiff5-dev libjpeg8-dev zlib1g-dev libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev tcl8.6-dev tk8.6-dev python-tk
-# install for apache and wsgi packages
-sudo apt-get install -y python3-pip apache2 libapache2-mod-wsgi-py3
 # https://virtualenv.pypa.io/en/stable/
 sudo pip install virtualenv
 virtualenv --python=python3 ${virenv_dir}
@@ -49,38 +40,36 @@ source ${virenv_dir}/bin/activate
 #(ENV)$ deactivate
 #$ rm -r /path/to/ENV
 
+#python manage.py startapp ${instance_report_app}
+# django-admin startproject ${instance_name}
+cd ${work_root}
+if [ -d ${instance_dir} ]; then
+    cd ${instance_dir} && git pull && cd -
+else
+    git clone https://github.com/liuyq/android-report.git ${instance_dir}
+fi
+
 # https://docs.djangoproject.com/en/1.11/topics/install/#installing-official-release
 # https://django-debug-toolbar.readthedocs.io/en/latest/changes.html
-pip install Django==1.11.17 django-debug-toolbar==1.11 pyaml django-crispy-forms python-ldap django-auth-ldap requests reportlab psycopg2 python-dateutil
-pip install matplotlib
-#pip install Django==1.11.8
+pip install -r ${instance_dir}/requirements.txt
 #pip install Django==3.0.8
-#pip install pyaml
-#pip install django-crispy-forms==1.8.1
-#pip install python-ldap # will install the 3.0 version
 # https://django-auth-ldap.readthedocs.io/en/latest/install.html
 #pip install django-auth-ldap # needs python-ldap >= 3.0
 #pip install bugzilla
-#pip install requests
-#pip install reportlab
 ## pip install Pillow
 ## pip install rst2pdf
 
 # https://docs.djangoproject.com/en/1.11/intro/tutorial01/
 python3 -m django --version
-#python manage.py startapp ${instance_report_app}
-# django-admin startproject ${instance_name}
-cd ${work_root}
-if [ -d lcr-report ]; then
-    cd lcr-report && git pull && cd -
-else
-    git clone https://github.com/liuyq/android-report.git lcr-report
-    if [ -v SECRET_KEY ]; then
-      echo "SECRET_KEY = '${SECRET_KEY}'" >> lcr-report/lcr/settings.py
+
+if ! grep -q SECRET_KEY ${instance_dir}/lcr/settings.py; then
+    if [ ! -v SECRET_KEY ]; then
+        SECRET_KEY=$(python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')
     fi
+    echo "SECRET_KEY = '${SECRET_KEY}'" >> ${instance_dir}/lcr/settings.py
 fi
 
-cd lcr-report
+cd ${instance_dir}
 mkdir -p datafiles/logfiles/
 sudo chown -R :www-data datafiles
 sudo chmod 775 datafiles
@@ -92,11 +81,15 @@ fi
 rm -fr datafiles/db.sqlite3
 python3 manage.py migrate
 # for apache admin display
-yes 'yes' | python3 manage.py collectstatic || true
+if grep DEPLOYED_WITH_APACHE ${instance_dir}/lcr/settings.py |grep -i "true"; then
+    yes 'yes' | python3 manage.py collectstatic || true
+fi
 python3 manage.py createsuperuser --username admin --email example@example.com --noinput
-echo "Please access the site via http://127.0.0.1:8000/lkft"
-echo "And you still need to update the bugzilla, qa-report tokens to resubmit job or create bugs"
-python3 manage.py runserver 0.0.0.0:8000
+if [ -z "${runserver}" ] || [ "${runserver}" != "false" ]; then
+    echo "Please access the site via http://127.0.0.1:8000/lkft"
+    echo "And you still need to update the bugzilla, qa-report tokens to resubmit job or create bugs"
+    python3 manage.py runserver 0.0.0.0:8000
+fi
 
 # python  manage.py collectstatic
 # By running makemigrations, you’re telling Django that you’ve made some changes to your models (in this case,
