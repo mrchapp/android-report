@@ -75,9 +75,12 @@ if [ -d lcr-report ]; then
     cd lcr-report && git pull && cd -
 else
     git clone https://github.com/liuyq/android-report.git lcr-report
-    if [ -v SECRET_KEY ]; then
-      echo "SECRET_KEY = '${SECRET_KEY}'" >> lcr-report/lcr/settings.py
+fi
+if ! grep -q SECRET_KEY lcr-report/lcr/settings.py; then
+    if [ ! -v SECRET_KEY ]; then
+        SECRET_KEY=$(python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')
     fi
+    echo "SECRET_KEY = '${SECRET_KEY}'" >> lcr-report/lcr/settings.py
 fi
 
 cd lcr-report
