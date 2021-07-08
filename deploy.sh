@@ -10,6 +10,8 @@ else
     exit 1
 fi
 
+runserver=${2:-true}
+
 instance_name="android-report"
 instance_report_app="report"
 instance_dir="${work_root}/${instance_name}"
@@ -90,9 +92,11 @@ if grep DEPLOYED_WITH_APACHE ${instance_dir}/lcr/settings.py |grep -i "true"; th
     yes 'yes' | python3 manage.py collectstatic || true
 fi
 python3 manage.py createsuperuser --username admin --email example@example.com --noinput
-echo "Please access the site via http://127.0.0.1:8000/lkft"
-echo "And you still need to update the bugzilla, qa-report tokens to resubmit job or create bugs"
-python3 manage.py runserver 0.0.0.0:8000
+if [ -z "${runserver}" ] || [ "${runserver}" != "false" ]; then
+    echo "Please access the site via http://127.0.0.1:8000/lkft"
+    echo "And you still need to update the bugzilla, qa-report tokens to resubmit job or create bugs"
+    python3 manage.py runserver 0.0.0.0:8000
+fi
 
 # python  manage.py collectstatic
 # By running makemigrations, you’re telling Django that you’ve made some changes to your models (in this case,
