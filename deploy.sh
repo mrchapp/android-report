@@ -10,7 +10,7 @@ else
     exit 1
 fi
 
-instance_name="lcr-report"
+instance_name="android-report"
 instance_report_app="report"
 instance_dir="${work_root}/${instance_name}"
 
@@ -38,6 +38,15 @@ source ${virenv_dir}/bin/activate
 #(ENV)$ deactivate
 #$ rm -r /path/to/ENV
 
+#python manage.py startapp ${instance_report_app}
+# django-admin startproject ${instance_name}
+cd ${work_root}
+if [ -d ${instance_dir} ]; then
+    cd ${instance_dir} && git pull && cd -
+else
+    git clone https://github.com/liuyq/android-report.git ${instance_dir}
+fi
+
 # https://docs.djangoproject.com/en/1.11/topics/install/#installing-official-release
 # https://django-debug-toolbar.readthedocs.io/en/latest/changes.html
 pip install Django==1.11.17 django-debug-toolbar==1.11 pyaml django-crispy-forms python-ldap django-auth-ldap requests reportlab psycopg2 python-dateutil
@@ -57,22 +66,15 @@ pip install matplotlib
 
 # https://docs.djangoproject.com/en/1.11/intro/tutorial01/
 python3 -m django --version
-#python manage.py startapp ${instance_report_app}
-# django-admin startproject ${instance_name}
-cd ${work_root}
-if [ -d lcr-report ]; then
-    cd lcr-report && git pull && cd -
-else
-    git clone https://github.com/liuyq/android-report.git lcr-report
-fi
-if ! grep -q SECRET_KEY lcr-report/lcr/settings.py; then
+
+if ! grep -q SECRET_KEY ${instance_dir}/lcr/settings.py; then
     if [ ! -v SECRET_KEY ]; then
         SECRET_KEY=$(python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')
     fi
-    echo "SECRET_KEY = '${SECRET_KEY}'" >> lcr-report/lcr/settings.py
+    echo "SECRET_KEY = '${SECRET_KEY}'" >> ${instance_dir}/lcr/settings.py
 fi
 
-cd lcr-report
+cd ${instance_dir}
 mkdir -p datafiles/logfiles/
 sudo chown -R :www-data datafiles
 sudo chmod 775 datafiles
@@ -84,7 +86,9 @@ fi
 rm -fr datafiles/db.sqlite3
 python3 manage.py migrate
 # for apache admin display
-yes 'yes' | python3 manage.py collectstatic || true
+if grep DEPLOYED_WITH_APACHE ${instance_dir}/lcr/settings.py |grep -i "true"; then
+    yes 'yes' | python3 manage.py collectstatic || true
+fi
 python3 manage.py createsuperuser --username admin --email example@example.com --noinput
 echo "Please access the site via http://127.0.0.1:8000/lkft"
 echo "And you still need to update the bugzilla, qa-report tokens to resubmit job or create bugs"
