@@ -37,10 +37,10 @@ sudo python3 get-pip.py
 sudo apt-get update
 #sudo apt-get install python-django-auth-ldap
 ## dependency for python-ldap
-sudo apt-get install libsasl2-dev python-dev python3-dev libldap2-dev libssl-dev gcc libjpeg-dev libpq-dev
+sudo apt-get install -y libsasl2-dev python-dev python3-dev libldap2-dev libssl-dev gcc libjpeg-dev libpq-dev
 #sudo apt-get install libtiff5-dev libjpeg8-dev zlib1g-dev libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev tcl8.6-dev tk8.6-dev python-tk
 # install for apache and wsgi packages
-sudo apt-get install python3-pip apache2 libapache2-mod-wsgi-py3
+sudo apt-get install -y python3-pip apache2 libapache2-mod-wsgi-py3
 # https://virtualenv.pypa.io/en/stable/
 sudo pip install virtualenv
 virtualenv --python=python3 ${virenv_dir}
@@ -75,6 +75,9 @@ if [ -d lcr-report ]; then
     cd lcr-report && git pull && cd -
 else
     git clone https://github.com/liuyq/android-report.git lcr-report
+    if [ -v SECRET_KEY ]; then
+      echo "SECRET_KEY = '${SECRET_KEY}'" >> lcr-report/lcr/settings.py
+    fi
 fi
 
 cd lcr-report
@@ -89,8 +92,8 @@ fi
 rm -fr datafiles/db.sqlite3
 python3 manage.py migrate
 # for apache admin display
-python3 manage.py collectstatic || true
-python3 manage.py createsuperuser
+yes 'yes' | python3 manage.py collectstatic || true
+python3 manage.py createsuperuser --username admin --email example@example.com --noinput
 echo "Please access the site via http://127.0.0.1:8000/lkft"
 echo "And you still need to update the bugzilla, qa-report tokens to resubmit job or create bugs"
 python3 manage.py runserver 0.0.0.0:8000
