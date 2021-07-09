@@ -40,6 +40,35 @@ qa_report_api = qa_report.QAReportApi(qa_report_def.get('domain'), qa_report_def
 jenkins_api = qa_report.JenkinsApi('ci.linaro.org', None)
 
 rawkernels = {
+    ## For gitlab pipeline tuxsuite builds
+    'android-4.4-o-hikey': [
+            '4.4o-8.1-hikey-tuxsuite',
+            '4.4o-9.0-lcr-hikey-tuxsuite',
+            '4.4o-10.0-gsi-hikey-tuxsuite',
+            ],
+    'android-4.4-p-hikey': [
+            '4.4p-9.0-hikey-tuxsuite',
+            '4.4p-10.0-gsi-hikey-tuxsuite',
+            ],
+    'android-4.9-o-hikey': [
+            ]
+    'android-4.9-p-hikey': [
+            ]
+    'android-4.9-q-hikey': [
+            "4.9q-10.0-gsi-hikey-tuxsuite",
+            "4.9q-10.0-gsi-hikey960-tuxsuite",
+            ]
+    'android-4.14-p-hikey': [
+            ]
+    'android-4.14-q-hikey': [
+            "4.14q-10.0-gsi-hikey-tuxsuite",
+            "4.14q-10.0-gsi-hikey960-tuxsuite",
+            ]
+    'android-4.19-q-hikey': [
+            '4.19q-10.0-gsi-hikey-tuxsuite',
+            '4.19q-10.0-gsi-hikey960-tuxsuite',
+            ],
+    ########## for normal jenkins ci builds ##########
     '4.4':[
             '4.4p-10.0-gsi-hikey',
             '4.4p-9.0-hikey',
@@ -107,6 +136,91 @@ rawkernels = {
 }
 
 projectids = {
+    # for gitlab pipeline tuxsuite builds ###########
+    '4.4o-8.1-hikey-tuxsuite': {
+                                'slug': '4.4o-8.1-hikey',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'LCR-Android8',
+                                'baseOS' : 'Android8',
+                                'kern' : '4.4',
+                                'branch' : 'Android-4.4-o',},
+    '4.4o-9.0-lcr-hikey-tuxsuite': {
+                                'slug': '4.4o-9.0-lcr-hikey',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'LCR-Android9',
+                                'baseOS' : 'Android9',
+                                'kern' : '4.4',
+                                'branch' : 'Android-4.4-o',},
+    '4.4o-10.0-gsi-hikey-tuxsuite': {
+                                'slug': '4.4o-10.0-gsi-hikey',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.4',
+                                'branch' : 'Android-4.4-o',},
+    '4.4p-9.0-hikey-tuxsuite': {
+                                'slug': '4.4p-9.0-hikey',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'LCR-Android9',
+                                'baseOS' : 'Android9',
+                                'kern' : '4.4',
+                                'branch' : 'Android-4.4-p',},
+    '4.4p-10.0-gsi-hikey-tuxsuite': {
+                                'slug': '4.4p-10.0-gsi-hikey',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.4',
+                                'branch' : 'Android-4.4-p',},
+    '4.9q-10.0-gsi-hikey-tuxsuite': {
+                                'slug': '4.9q-10.0-gsi-hikey',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.4',
+                                'branch' : 'Android-4.19-q',},
+    '4.9q-10.0-gsi-hikey960-tuxsuite': {
+                                'slug': '44.9q-10.0-gsi-hikey',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.4',
+                                'branch' : 'Android-4.19-q',},
+
+    '4.14q-10.0-gsi-hikey-tuxsuite': {
+                                'slug': '4.14q-10.0-gsi-hikey',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.4',
+                                'branch' : 'Android-4.19-q',},
+    '4.14q-10.0-gsi-hikey960-tuxsuite': {
+                                'slug': '4.14q-10.0-gsi-hikey960',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.4',
+                                'branch' : 'Android-4.19-q',},
+
+    '4.19q-10.0-gsi-hikey-tuxsuite': {
+                                'slug': '4.19-10.0-gsi-hikey',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.4',
+                                'branch' : 'Android-4.19-q',},
+    '4.19q-10.0-gsi-hikey960-tuxsuite': {
+                                'slug': '4.19-10.0-gsi-hikey960',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.4',
+                                'branch' : 'Android-4.19-q',},
+
+    ########## for jenkins ci builds ###################
     '4.4o-8.1-hikey':
                     {'project_id': 86, 
                      'hardware': 'HiKey',
@@ -1036,8 +1150,21 @@ class Command(BaseCommand):
 
         for combo in work:
             project_info = projectids[combo]
-            project_id = project_info['project_id']
-            project =  qa_report_api.get_project(project_id)
+            project_id = project_info.get('project_id', None)
+            if project_id is not None:
+                project =  qa_report_api.get_project(project_id)
+            else:
+                project_group = project_info.get('group', None)
+                project_slug = project_info.get('slug', None)
+                project_fullname = qa_report_api.get_project_full_name_with_group_and_slug(project_group, project_slug)
+                project =  qa_report_api.get_project_with_name(project_fullname)
+
+            if project is None:
+                print("\nERROR project for " + combo + " was not found, please check and try again\n")
+                output.write("\nERROR project for " + combo+ " was not found, please check and try again\n\n")
+                continue
+
+            project_id = project.get('id')
             builds = qa_report_api.get_all_builds(project_id)
             
             project_name = project.get('name')
