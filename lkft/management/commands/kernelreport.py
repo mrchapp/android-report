@@ -51,19 +51,31 @@ rawkernels = {
             '4.4p-10.0-gsi-hikey-tuxsuite',
             ],
     'android-4.9-o-hikey': [
-            ]
+            '4.9o-8.1-hikey-tuxsuite',
+            '4.9o-9.0-lcr-hikey-tuxsuite',
+            '4.9o-10.0-gsi-hikey-tuxsuite',
+            '4.9o-10.0-gsi-hikey960-tuxsuite',
+            ],
     'android-4.9-p-hikey': [
-            ]
+            "4.9p-9.0-hikey-tuxsuite",
+            "4.9p-10.0-gsi-hikey-tuxsuite",
+            "4.9p-9.0-hikey960-tuxsuite",
+            "4.9p-10.0-gsi-hikey960-tuxsuite",
+            ],
     'android-4.9-q-hikey': [
             "4.9q-10.0-gsi-hikey-tuxsuite",
             "4.9q-10.0-gsi-hikey960-tuxsuite",
-            ]
+            ],
     'android-4.14-p-hikey': [
-            ]
+            '4.14p-10.0-gsi-hikey960-tuxsuite',
+            '4.14p-9.0-hikey960-tuxsuite',
+            '4.14p-10.0-gsi-hikey-tuxsuite',
+            '4.14p-9.0-hikey-tuxsuite',
+            ],
     'android-4.14-q-hikey': [
             "4.14q-10.0-gsi-hikey-tuxsuite",
             "4.14q-10.0-gsi-hikey960-tuxsuite",
-            ]
+            ],
     'android-4.19-q-hikey': [
             '4.19q-10.0-gsi-hikey-tuxsuite',
             '4.19q-10.0-gsi-hikey960-tuxsuite',
@@ -137,6 +149,8 @@ rawkernels = {
 
 projectids = {
     # for gitlab pipeline tuxsuite builds ###########
+
+    ## for 4.4o
     '4.4o-8.1-hikey-tuxsuite': {
                                 'slug': '4.4o-8.1-hikey',
                                 'group':'~yongqin.liu',
@@ -160,6 +174,7 @@ projectids = {
                                 'OS' : 'Android10',
                                 'kern' : '4.4',
                                 'branch' : 'Android-4.4-o',},
+    ## for 4.4p
     '4.4p-9.0-hikey-tuxsuite': {
                                 'slug': '4.4p-9.0-hikey',
                                 'group':'~yongqin.liu',
@@ -175,49 +190,143 @@ projectids = {
                                 'OS' : 'Android10',
                                 'kern' : '4.4',
                                 'branch' : 'Android-4.4-p',},
+
+    ## for 4.9o
+    '4.9o-8.1-hikey-tuxsuite': {
+                        'slug': '4.9o-8.1-hikey',
+                        'group':'~yongqin.liu',
+                        'hardware': 'HiKey',
+                        'OS' : 'Android10',
+                        'kern' : '4.9',
+                        'branch' : 'Android-4.9-o',},
+    '4.9o-9.0-lcr-hikey-tuxsuite': {
+                        'slug': '4.9o-9.0-lcr-hikey',
+                        'group':'~yongqin.liu',
+                        'hardware': 'HiKey',
+                        'OS' : 'Android10',
+                        'kern' : '4.9',
+                        'branch' : 'Android-4.9-o',},
+    '4.9o-10.0-gsi-hikey-tuxsuite': {
+                        'slug': '4.9o-10.0-gsi-hikey',
+                        'group':'~yongqin.liu',
+                        'hardware': 'HiKey',
+                        'OS' : 'Android10',
+                        'kern' : '4.9',
+                        'branch' : 'Android-4.9-o',},
+    '4.9o-10.0-gsi-hikey960-tuxsuite': {
+                        'slug': '4.9o-10.0-gsi-hikey960',
+                        'group':'~yongqin.liu',
+                        'hardware': 'HiKey',
+                        'OS' : 'Android10',
+                        'kern' : '4.9',
+                        'branch' : 'Android-4.9-o',},
+
+    ## for 4.9p
+    "4.9p-9.0-hikey-tuxsuite": {
+                                'slug': '4.9p-9.0-hikey',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.9',
+                                'branch' : 'Android-4.9-p',},
+    "4.9p-10.0-gsi-hikey-tuxsuite": {
+                                'slug': '4.9p-10.0-gsi-hikey',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.9',
+                                'branch' : 'Android-4.9-p',},
+    "4.9p-9.0-hikey960-tuxsuite": {
+                                'slug': '4.9p-9.0-hikey960',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.9',
+                                'branch' : 'Android-4.9-p',},
+    "4.9p-10.0-gsi-hikey960-tuxsuite": {
+                                'slug': '4.9p-10.0-gsi-hikey96y',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.9',
+                                'branch' : 'Android-4.9-p',},
+
+    ## for 4.9q
     '4.9q-10.0-gsi-hikey-tuxsuite': {
                                 'slug': '4.9q-10.0-gsi-hikey',
                                 'group':'~yongqin.liu',
                                 'hardware': 'HiKey',
                                 'OS' : 'Android10',
-                                'kern' : '4.4',
-                                'branch' : 'Android-4.19-q',},
+                                'kern' : '4.9',
+                                'branch' : 'Android-4.9-q',},
     '4.9q-10.0-gsi-hikey960-tuxsuite': {
-                                'slug': '44.9q-10.0-gsi-hikey',
+                                'slug': '4.9q-10.0-gsi-hikey',
                                 'group':'~yongqin.liu',
                                 'hardware': 'HiKey',
                                 'OS' : 'Android10',
-                                'kern' : '4.4',
-                                'branch' : 'Android-4.19-q',},
+                                'kern' : '4.9',
+                                'branch' : 'Android-4.9-q',},
 
+    ## for 4.14p
+    '4.14p-9.0-hikey-tuxsuite': {
+                                'slug': '4.14p-9.0-hikey',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.14',
+                                'branch' : 'Android-4.14-p',},
+    '4.14p-10.0-gsi-hikey-tuxsuite': {
+                                'slug': '4.14p-10.0-gsi-hikey',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.14',
+                                'branch' : 'Android-4.14-p',},
+    '4.14p-9.0-hikey960-tuxsuite': {
+                                'slug': '4.14p-9.0-hikey960',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.14',
+                                'branch' : 'Android-4.14-p',},
+    '4.14p-10.0-gsi-hikey960-tuxsuite': {
+                                'slug': '4.14p-10.0-gsi-hikey960',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'Android10',
+                                'kern' : '4.14',
+                                'branch' : 'Android-4.14-p',},
+
+    ## for 4.14q
     '4.14q-10.0-gsi-hikey-tuxsuite': {
                                 'slug': '4.14q-10.0-gsi-hikey',
                                 'group':'~yongqin.liu',
                                 'hardware': 'HiKey',
                                 'OS' : 'Android10',
-                                'kern' : '4.4',
-                                'branch' : 'Android-4.19-q',},
+                                'kern' : '4.14',
+                                'branch' : 'Android-4.14-q',},
     '4.14q-10.0-gsi-hikey960-tuxsuite': {
                                 'slug': '4.14q-10.0-gsi-hikey960',
                                 'group':'~yongqin.liu',
                                 'hardware': 'HiKey',
                                 'OS' : 'Android10',
-                                'kern' : '4.4',
-                                'branch' : 'Android-4.19-q',},
+                                'kern' : '4.14',
+                                'branch' : 'Android-4.14-q',},
 
+    ## for 4.19q
     '4.19q-10.0-gsi-hikey-tuxsuite': {
-                                'slug': '4.19-10.0-gsi-hikey',
+                                'slug': '4.19q-10.0-gsi-hikey',
                                 'group':'~yongqin.liu',
                                 'hardware': 'HiKey',
                                 'OS' : 'Android10',
-                                'kern' : '4.4',
+                                'kern' : '4.19',
                                 'branch' : 'Android-4.19-q',},
     '4.19q-10.0-gsi-hikey960-tuxsuite': {
-                                'slug': '4.19-10.0-gsi-hikey960',
+                                'slug': '4.19q-10.0-gsi-hikey960',
                                 'group':'~yongqin.liu',
                                 'hardware': 'HiKey',
                                 'OS' : 'Android10',
-                                'kern' : '4.4',
+                                'kern' : '4.19',
                                 'branch' : 'Android-4.19-q',},
 
     ########## for jenkins ci builds ###################
@@ -1152,11 +1261,14 @@ class Command(BaseCommand):
             project_info = projectids[combo]
             project_id = project_info.get('project_id', None)
             if project_id is not None:
+                logger.info("Try to get project %s with project_id %s", combo, project_id)
                 project =  qa_report_api.get_project(project_id)
             else:
                 project_group = project_info.get('group', None)
                 project_slug = project_info.get('slug', None)
                 project_fullname = qa_report_api.get_project_full_name_with_group_and_slug(project_group, project_slug)
+
+                logger.info("Try to get project %s with project_fullname %s", combo, project_fullname)
                 project =  qa_report_api.get_project_with_name(project_fullname)
 
             if project is None:
