@@ -143,7 +143,7 @@ rawkernels = {
             'mainline-gki-aosp-master-db845c',
             'mainline-gki-aosp-master-hikey960',
             'mainline-gki-aosp-master-hikey',
-             'mainline-gki-aosp-master-x15',
+            'mainline-gki-aosp-master-x15',
             ],
 }
 
@@ -874,7 +874,7 @@ def markjob(job, jobTransactionStatus):
                jobTransactionStatus['boot-job'] = job
 
 
-def find_best_two_runs(builds, project_name, project, exact):
+def find_best_two_runs(builds, project_name, project, exact, no_check_kernel_version=False):
     goodruns = []
     bailaftertwo = 0
     number_of_build_with_jobs = 0
@@ -896,13 +896,14 @@ def find_best_two_runs(builds, project_name, project, exact):
             # print "baseset"
         elif bailaftertwo == 1 :
             nextVersionDict = versiontoMME(build['version'])
-            if nextVersionDict['Extra'] == baseVersionDict['Extra']:
-                nextRc = nextVersionDict.get('rc')
-                baseRc = baseVersionDict.get('rc')
-                if (nextRc is None and baseRc is None) \
-                        or (nextRc is not None and baseRc is not None and nextRc == baseRc):
-                    logger.info('Skip the check as it has the same version for %s %s', project_name, build['version'])
-                    continue
+            if not no_check_kernel_version:
+                if nextVersionDict['Extra'] == baseVersionDict['Extra']:
+                    nextRc = nextVersionDict.get('rc')
+                    baseRc = baseVersionDict.get('rc')
+                    if (nextRc is None and baseRc is None) \
+                            or (nextRc is not None and baseRc is not None and nextRc == baseRc):
+                        logger.info('Skip the check as it has the same version for %s %s', project_name, build['version'])
+                        continue
 
         logger.info("Checking for %s, %s", project_name, build.get('version'))
         build_number_passed = 0
@@ -1242,6 +1243,11 @@ class Command(BaseCommand):
         parser.add_argument('outputfile', type=str, help='Output File')
         parser.add_argument('flake', type=str, help='flakey file')
         parser.add_argument('exact', default='No', type=str, help='exact kernel version')
+        parser.add_argument("--no-check-kernel-version",
+                help="Specify if the kernel version for the build should be checked.",
+                dest="no_check_kernel_version",
+                action='store_true',
+                required=False)
 
     def handle(self, *args, **options):
         kernel = options['kernel']
@@ -1249,6 +1255,8 @@ class Command(BaseCommand):
         scribblefile = path_outputfile + str(".scribble")
         path_flakefile = options['flake']
         exact = options['exact']
+
+        no_check_kernel_version = options.get('no_check_kernel_version')
 
         # map kernel to all available kernel, board, OS combos that match
         work = []
@@ -1289,7 +1297,7 @@ class Command(BaseCommand):
             builds = qa_report_api.get_all_builds(project_id)
             
             project_name = project.get('name')
-            goodruns = find_best_two_runs(builds, project_name, project, exact)
+            goodruns = find_best_two_runs(builds, project_name, project, exact, no_check_kernel_version=no_check_kernel_version)
             if len(goodruns) < 2 :
                 print("\nERROR project " + project_name+ " did not have 2 good runs\n")
                 output.write("\nERROR project " + project_name+ " did not have 2 good runs\n\n")
