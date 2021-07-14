@@ -1252,7 +1252,12 @@ class Command(BaseCommand):
         unique_kernel_info = { }
         unique_kernels=[]
 
-        work = rawkernels[kernel]
+        work = rawkernels.get(kernel)
+        if work is None:
+            print("The specified kernel is not supported yet: %s", kernel)
+            print("The supported kernels are:", ' '.join(rawkernels.keys()))
+            return
+
         flakes = process_flakey_file(flakefile)
 
         do_boilerplate(output)
