@@ -1217,20 +1217,21 @@ def report_results(output, run, regressions, combo, priorrun, flakes, antiregres
         output.write("        " + testtype + " " + regression['module_name'] +"." + regression['test_name'] + "\n")
 
 
-def report_kernels_in_report(output, unique_kernels, unique_kernel_info): 
-    output.write("\n")
-    output.write("\n")
-    output.write("Kernel/OS Combo(s) in this report:\n")
-    for kernel in unique_kernels:
-        output.write("    " + kernel+ " - ")
-        combolist = unique_kernel_info[kernel]
-        intercombo = iter(combolist)
-        combo=combolist[0]
-        output.write(combo)
-        next(intercombo)
-        for combo in intercombo:
-            output.write(", "+ combo)
-        output.write("\n")
+def report_kernels_in_report(path_outputfile, unique_kernels, unique_kernel_info):
+    with open(path_outputfile, "w") as f_outputfile:
+        f_outputfile.write("\n")
+        f_outputfile.write("\n")
+        f_outputfile.write("Kernel/OS Combo(s) in this report:\n")
+        for kernel in unique_kernels:
+            f_outputfile.write("    " + kernel+ " - ")
+            combolist = unique_kernel_info[kernel]
+            intercombo = iter(combolist)
+            combo=combolist[0]
+            f_outputfile.write(combo)
+            next(intercombo)
+            for combo in intercombo:
+                f_outputfile.write(", "+ combo)
+            f_outputfile.write("\n")
 
 
 class Command(BaseCommand):
@@ -1244,9 +1245,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         kernel = options['kernel']
-        scribblefile = options['outputfile'] + str(".scribble")
-        output = open(scribblefile, "w")
-        outputheader = open(options['outputfile'], "w")
+        path_outputfile = options['outputfile']
+        scribblefile = path_outputfile + str(".scribble")
         path_flakefile = options['flake']
         exact = options['exact']
 
@@ -1263,6 +1263,7 @@ class Command(BaseCommand):
 
         flakes = process_flakey_file(path_flakefile)
 
+        output = open(scribblefile, "w")
         do_boilerplate(output)
 
         for combo in work:
@@ -1297,11 +1298,11 @@ class Command(BaseCommand):
                 regressions = find_regressions(goodruns)
                 antiregressions = find_antiregressions(goodruns)
                 report_results(output, goodruns[1], regressions, combo, goodruns[0], flakes, antiregressions)
-        report_kernels_in_report(outputheader, unique_kernels, unique_kernel_info)
+
+        report_kernels_in_report(path_outputfile, unique_kernels, unique_kernel_info)
         output.close()
-        outputheader.close()
         
-        bashCommand = "cat "+ str(scribblefile) +str(" >> ") + str(options['outputfile'])
+        bashCommand = "cat "+ str(scribblefile) +str(" >> ") + path_outputfile
         print(bashCommand)
         #process = subprocess.run(['cat', scribblefile, str('>>'+options['outputfile']) ], stdout=subprocess.PIPE)
         
