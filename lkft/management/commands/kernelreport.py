@@ -626,7 +626,7 @@ def do_boilerplate(output):
 
 # a flake entry
 # name, state, bugzilla
-def process_flakey_file(flakefile):
+def process_flakey_file(path_flakefile):
     Dict44 = {'version' : 4.4 , 'flakelist' : [] }
     Dict49 = {'version' : 4.9 , 'flakelist' : [] }
     Dict414 = {'version' : 4.14, 'flakelist' : [] }
@@ -640,7 +640,10 @@ def process_flakey_file(flakefile):
     hardwarematch = re.compile('HiKey|db845|HiKey960')
     allmatch = re.compile('ALL')
     #pdb.set_trace()
-    Lines = flakefile.readlines()
+
+    f_flakefile = open(path_flakefile, "r")
+    Lines = f_flakefile.readlines()
+    f_flakefile.close()
     for Line in Lines:
         newstate = ' '
         if Line[0] == '#':
@@ -1244,7 +1247,7 @@ class Command(BaseCommand):
         scribblefile = options['outputfile'] + str(".scribble")
         output = open(scribblefile, "w")
         outputheader = open(options['outputfile'], "w")
-        flakefile = open(options['flake'], "r")
+        path_flakefile = options['flake']
         exact = options['exact']
 
         # map kernel to all available kernel, board, OS combos that match
@@ -1258,7 +1261,7 @@ class Command(BaseCommand):
             print("The supported kernels are:", ' '.join(rawkernels.keys()))
             return
 
-        flakes = process_flakey_file(flakefile)
+        flakes = process_flakey_file(path_flakefile)
 
         do_boilerplate(output)
 
