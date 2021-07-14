@@ -131,6 +131,10 @@ rawkernels = {
             '5.10-gki-aosp-master-db845c',
             '5.10-gki-aosp-master-hikey960',
             ],
+    'EAP510-lts':[
+            '5.10-lts-gki-android12-private-android12-hikey960',
+            '5.10-lts-gki-android12-private-android12-db845c',
+            ],
     'EAP510':[
             '5.10-gki-private-android12-db845c',
             '5.10-gki-private-android12-hikey960',
@@ -579,6 +583,21 @@ projectids = {
                      'OS' : 'Android12',
                      'kern' : '5.10',
                      'branch' : 'Android-5.10',},
+
+    '5.10-lts-gki-android12-private-android12-hikey960':
+                    {'slug': '5.10-lts-gki-android12-private-android12-hikey960',
+                     'group': 'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'Android12',
+                     'kern' : '5.10',
+                     'branch' : 'Android-5.10-lts',},
+    '5.10-lts-gki-android12-private-android12-db845c':
+                    {'slug': '5.10-lts-gki-android12-private-android12-db845c',
+                     'group': 'android-lkft',
+                     'hardware': 'db845',
+                     'OS' : 'Android12',
+                     'kern' : '5.10',
+                     'branch' : 'Android-5.10-lts',},
     '5.4-gki-private-android12-db845c':
                     {'project_id': 620,
                      'hardware': 'db845',
@@ -1265,7 +1284,7 @@ class Command(BaseCommand):
 
         work = rawkernels.get(kernel)
         if work is None:
-            print("The specified kernel is not supported yet: %s", kernel)
+            print("The specified kernel is not supported yet:", kernel)
             print("The supported kernels are:", ' '.join(rawkernels.keys()))
             return
 
