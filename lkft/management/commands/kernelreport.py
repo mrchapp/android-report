@@ -131,6 +131,10 @@ rawkernels = {
             '5.10-gki-aosp-master-db845c',
             '5.10-gki-aosp-master-hikey960',
             ],
+    'EAP510-lts':[
+            '5.10-lts-gki-android12-private-android12-hikey960',
+            '5.10-lts-gki-android12-private-android12-db845c',
+            ],
     'EAP510':[
             '5.10-gki-private-android12-db845c',
             '5.10-gki-private-android12-hikey960',
@@ -143,7 +147,7 @@ rawkernels = {
             'mainline-gki-aosp-master-db845c',
             'mainline-gki-aosp-master-hikey960',
             'mainline-gki-aosp-master-hikey',
-             'mainline-gki-aosp-master-x15',
+            'mainline-gki-aosp-master-x15',
             ],
 }
 
@@ -579,6 +583,21 @@ projectids = {
                      'OS' : 'Android12',
                      'kern' : '5.10',
                      'branch' : 'Android-5.10',},
+
+    '5.10-lts-gki-android12-private-android12-hikey960':
+                    {'slug': '5.10-lts-gki-android12-private-android12-hikey960',
+                     'group': 'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'Android12',
+                     'kern' : '5.10',
+                     'branch' : 'Android-5.10-lts',},
+    '5.10-lts-gki-android12-private-android12-db845c':
+                    {'slug': '5.10-lts-gki-android12-private-android12-db845c',
+                     'group': 'android-lkft',
+                     'hardware': 'db845',
+                     'OS' : 'Android12',
+                     'kern' : '5.10',
+                     'branch' : 'Android-5.10-lts',},
     '5.4-gki-private-android12-db845c':
                     {'project_id': 620,
                      'hardware': 'db845',
@@ -626,7 +645,7 @@ def do_boilerplate(output):
 
 # a flake entry
 # name, state, bugzilla
-def process_flakey_file(flakefile):
+def process_flakey_file(path_flakefile):
     Dict44 = {'version' : 4.4 , 'flakelist' : [] }
     Dict49 = {'version' : 4.9 , 'flakelist' : [] }
     Dict414 = {'version' : 4.14, 'flakelist' : [] }
@@ -640,7 +659,10 @@ def process_flakey_file(flakefile):
     hardwarematch = re.compile('HiKey|db845|HiKey960')
     allmatch = re.compile('ALL')
     #pdb.set_trace()
-    Lines = flakefile.readlines()
+
+    f_flakefile = open(path_flakefile, "r")
+    Lines = f_flakefile.readlines()
+    f_flakefile.close()
     for Line in Lines:
         newstate = ' '
         if Line[0] == '#':
@@ -871,7 +893,7 @@ def markjob(job, jobTransactionStatus):
                jobTransactionStatus['boot-job'] = job
 
 
-def find_best_two_runs(builds, project_name, project, exact):
+def find_best_two_runs(builds, project_name, project, exact, no_check_kernel_version=False):
     goodruns = []
     bailaftertwo = 0
     number_of_build_with_jobs = 0
@@ -893,13 +915,14 @@ def find_best_two_runs(builds, project_name, project, exact):
             # print "baseset"
         elif bailaftertwo == 1 :
             nextVersionDict = versiontoMME(build['version'])
-            if nextVersionDict['Extra'] == baseVersionDict['Extra']:
-                nextRc = nextVersionDict.get('rc')
-                baseRc = baseVersionDict.get('rc')
-                if (nextRc is None and baseRc is None) \
-                        or (nextRc is not None and baseRc is not None and nextRc == baseRc):
-                    logger.info('Skip the check as it has the same version for %s %s', project_name, build['version'])
-                    continue
+            if not no_check_kernel_version:
+                if nextVersionDict['Extra'] == baseVersionDict['Extra']:
+                    nextRc = nextVersionDict.get('rc')
+                    baseRc = baseVersionDict.get('rc')
+                    if (nextRc is None and baseRc is None) \
+                            or (nextRc is not None and baseRc is not None and nextRc == baseRc):
+                        logger.info('Skip the check as it has the same version for %s %s', project_name, build['version'])
+                        continue
 
         logger.info("Checking for %s, %s", project_name, build.get('version'))
         build_number_passed = 0
@@ -1214,20 +1237,21 @@ def report_results(output, run, regressions, combo, priorrun, flakes, antiregres
         output.write("        " + testtype + " " + regression['module_name'] +"." + regression['test_name'] + "\n")
 
 
-def report_kernels_in_report(output, unique_kernels, unique_kernel_info): 
-    output.write("\n")
-    output.write("\n")
-    output.write("Kernel/OS Combo(s) in this report:\n")
-    for kernel in unique_kernels:
-        output.write("    " + kernel+ " - ")
-        combolist = unique_kernel_info[kernel]
-        intercombo = iter(combolist)
-        combo=combolist[0]
-        output.write(combo)
-        next(intercombo)
-        for combo in intercombo:
-            output.write(", "+ combo)
-        output.write("\n")
+def report_kernels_in_report(path_outputfile, unique_kernels, unique_kernel_info):
+    with open(path_outputfile, "w") as f_outputfile:
+        f_outputfile.write("\n")
+        f_outputfile.write("\n")
+        f_outputfile.write("Kernel/OS Combo(s) in this report:\n")
+        for kernel in unique_kernels:
+            f_outputfile.write("    " + kernel+ " - ")
+            combolist = unique_kernel_info[kernel]
+            intercombo = iter(combolist)
+            combo=combolist[0]
+            f_outputfile.write(combo)
+            next(intercombo)
+            for combo in intercombo:
+                f_outputfile.write(", "+ combo)
+            f_outputfile.write("\n")
 
 
 class Command(BaseCommand):
@@ -1238,23 +1262,35 @@ class Command(BaseCommand):
         parser.add_argument('outputfile', type=str, help='Output File')
         parser.add_argument('flake', type=str, help='flakey file')
         parser.add_argument('exact', default='No', type=str, help='exact kernel version')
+        parser.add_argument("--no-check-kernel-version",
+                help="Specify if the kernel version for the build should be checked.",
+                dest="no_check_kernel_version",
+                action='store_true',
+                required=False)
 
     def handle(self, *args, **options):
         kernel = options['kernel']
-        scribblefile = options['outputfile'] + str(".scribble")
-        output = open(scribblefile, "w")
-        outputheader = open(options['outputfile'], "w")
-        flakefile = open(options['flake'], "r")
+        path_outputfile = options['outputfile']
+        scribblefile = path_outputfile + str(".scribble")
+        path_flakefile = options['flake']
         exact = options['exact']
+
+        no_check_kernel_version = options.get('no_check_kernel_version')
 
         # map kernel to all available kernel, board, OS combos that match
         work = []
         unique_kernel_info = { }
         unique_kernels=[]
 
-        work = rawkernels[kernel]
-        flakes = process_flakey_file(flakefile)
+        work = rawkernels.get(kernel)
+        if work is None:
+            print("The specified kernel is not supported yet:", kernel)
+            print("The supported kernels are:", ' '.join(rawkernels.keys()))
+            return
 
+        flakes = process_flakey_file(path_flakefile)
+
+        output = open(scribblefile, "w")
         do_boilerplate(output)
 
         for combo in work:
@@ -1280,7 +1316,7 @@ class Command(BaseCommand):
             builds = qa_report_api.get_all_builds(project_id)
             
             project_name = project.get('name')
-            goodruns = find_best_two_runs(builds, project_name, project, exact)
+            goodruns = find_best_two_runs(builds, project_name, project, exact, no_check_kernel_version=no_check_kernel_version)
             if len(goodruns) < 2 :
                 print("\nERROR project " + project_name+ " did not have 2 good runs\n")
                 output.write("\nERROR project " + project_name+ " did not have 2 good runs\n\n")
@@ -1289,11 +1325,11 @@ class Command(BaseCommand):
                 regressions = find_regressions(goodruns)
                 antiregressions = find_antiregressions(goodruns)
                 report_results(output, goodruns[1], regressions, combo, goodruns[0], flakes, antiregressions)
-        report_kernels_in_report(outputheader, unique_kernels, unique_kernel_info)
+
+        report_kernels_in_report(path_outputfile, unique_kernels, unique_kernel_info)
         output.close()
-        outputheader.close()
         
-        bashCommand = "cat "+ str(scribblefile) +str(" >> ") + str(options['outputfile'])
+        bashCommand = "cat "+ str(scribblefile) +str(" >> ") + path_outputfile
         print(bashCommand)
         #process = subprocess.run(['cat', scribblefile, str('>>'+options['outputfile']) ], stdout=subprocess.PIPE)
         
