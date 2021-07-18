@@ -33,7 +33,7 @@ done
 if [ "X${exact_ker_version}" = "XNo" ]; then
     f_report="/tmp/kernelreport-${ker_version}.txt"
 else
-    f_report="/tmp/kernelreport-${exact_ker_version}.txt"
+    f_report="/tmp/kernelreport-${ker_version}-${exact_ker_version}.txt"
 fi
 rm -f "${f_report}.scribble"
 
