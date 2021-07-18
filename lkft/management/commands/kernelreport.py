@@ -220,7 +220,7 @@ projectids = {
     '4.9o-10.0-gsi-hikey960-tuxsuite': {
                         'slug': '4.9o-10.0-gsi-hikey960',
                         'group':'~yongqin.liu',
-                        'hardware': 'HiKey',
+                        'hardware': 'HiKey960',
                         'OS' : 'Android10',
                         'kern' : '4.9',
                         'branch' : 'Android-4.9-o',},
@@ -243,14 +243,14 @@ projectids = {
     "4.9p-9.0-hikey960-tuxsuite": {
                                 'slug': '4.9p-9.0-hikey960',
                                 'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
+                                'hardware': 'HiKey960',
                                 'OS' : 'Android10',
                                 'kern' : '4.9',
                                 'branch' : 'Android-4.9-p',},
     "4.9p-10.0-gsi-hikey960-tuxsuite": {
-                                'slug': '4.9p-10.0-gsi-hikey96y',
+                                'slug': '4.9p-10.0-gsi-hikey960',
                                 'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
+                                'hardware': 'HiKey960',
                                 'OS' : 'Android10',
                                 'kern' : '4.9',
                                 'branch' : 'Android-4.9-p',},
@@ -266,7 +266,7 @@ projectids = {
     '4.9q-10.0-gsi-hikey960-tuxsuite': {
                                 'slug': '4.9q-10.0-gsi-hikey',
                                 'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
+                                'hardware': 'HiKey960',
                                 'OS' : 'Android10',
                                 'kern' : '4.9',
                                 'branch' : 'Android-4.9-q',},
@@ -289,14 +289,14 @@ projectids = {
     '4.14p-9.0-hikey960-tuxsuite': {
                                 'slug': '4.14p-9.0-hikey960',
                                 'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
+                                'hardware': 'HiKey960',
                                 'OS' : 'Android10',
                                 'kern' : '4.14',
                                 'branch' : 'Android-4.14-p',},
     '4.14p-10.0-gsi-hikey960-tuxsuite': {
                                 'slug': '4.14p-10.0-gsi-hikey960',
                                 'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
+                                'hardware': 'HiKey960',
                                 'OS' : 'Android10',
                                 'kern' : '4.14',
                                 'branch' : 'Android-4.14-p',},
@@ -312,7 +312,7 @@ projectids = {
     '4.14q-10.0-gsi-hikey960-tuxsuite': {
                                 'slug': '4.14q-10.0-gsi-hikey960',
                                 'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
+                                'hardware': 'HiKey960',
                                 'OS' : 'Android10',
                                 'kern' : '4.14',
                                 'branch' : 'Android-4.14-q',},
@@ -328,7 +328,7 @@ projectids = {
     '4.19q-10.0-gsi-hikey960-tuxsuite': {
                                 'slug': '4.19q-10.0-gsi-hikey960',
                                 'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
+                                'hardware': 'HiKey960',
                                 'OS' : 'Android10',
                                 'kern' : '4.19',
                                 'branch' : 'Android-4.19-q',},
