@@ -46,7 +46,7 @@ cd ${work_root}
 if [ -d ${instance_dir} ]; then
     cd ${instance_dir} && git pull && cd -
 else
-    git clone https://github.com/liuyq/android-report.git ${instance_dir}
+    git clone https://github.com/Linaro/android-report.git ${instance_dir}
 fi
 
 # https://docs.djangoproject.com/en/1.11/topics/install/#installing-official-release
