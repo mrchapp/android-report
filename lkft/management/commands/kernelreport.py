@@ -757,9 +757,11 @@ def classifyTest(flakeDicts, testcasename, hardware, kernel, android):
 
 
 def versiontoMME(versionString):
+    ## 5.13.0, 5.13.0-50292ffdbbdb, 5.14.0-rc2, or 5.14.0-rc2-754a0abed174
     versionDict = { 'Major':0,
                     'Minor':0,
-                    'Extra':0, }
+                    'Extra':0,
+                    'versionString': versionString}
 
     if versionString.startswith('v'):
         versionString = versionString[1:]
@@ -771,8 +773,22 @@ def versiontoMME(versionString):
         versionDict['Minor'] = tokens[1]
         versionDict['Extra'] = tokens[2]
 
-    if len(tokens) >= 4 and tokens[3].startswith('rc'):
-        versionDict['rc'] = tokens[3]
+    tokens_hyphen = versionString.split('-')
+    if len(tokens_hyphen) >= 2:
+        if tokens_hyphen[1].startswith('rc'):
+            # for case of 5.14.0-rc2, or 5.14.0-rc2-754a0abed174
+            versionDict['rc'] = tokens_hyphen[1]
+            if len(tokens_hyphen) == 3:
+                versionDict['sha'] = tokens_hyphen[2]
+            else:
+                # for case of 5.14.0-rc2, no sha specified
+                pass
+        else:
+            # for case of 5.13.0-50292ffdbbdb, not rc version
+            versionDict['sha'] = tokens_hyphen[1]
+    else:
+        # for case of 5.13.0, not rc version, and no sha specified
+        pass
 
     return versionDict
 
@@ -893,36 +909,53 @@ def markjob(job, jobTransactionStatus):
                jobTransactionStatus['boot-job'] = job
 
 
-def find_best_two_runs(builds, project_name, project, exact, no_check_kernel_version=False):
+def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2="", reverse_build_order=False, no_check_kernel_version=False):
     goodruns = []
     bailaftertwo = 0
     number_of_build_with_jobs = 0
     baseExactVersionDict=None
     nextVersionDict=None
 
-    if exact!='No':
-        baseExactVersionDict = versiontoMME(exact) 
+    if len(exact_ver1) > 0 and exact_ver1 !='No':
+        baseExactVersionDict = versiontoMME(exact_ver1)
 
     for build in builds:
         if bailaftertwo == 2:
             break
         elif bailaftertwo == 0 :
             baseVersionDict = versiontoMME(build['version'])
-            if baseExactVersionDict is not None:
-                if baseVersionDict['Extra'] != baseExactVersionDict['Extra']:
-                    logger.info('Skip the check as it not the specified version for %s %s', project_name, build['version'])
-                    continue
+            if baseExactVersionDict is not None \
+                    and not baseVersionDict['versionString'].startswith(exact_ver1):
+                logger.info('Skip the check as it is not the specified version for %s %s', project_name, build['version'])
+                continue
             # print "baseset"
         elif bailaftertwo == 1 :
             nextVersionDict = versiontoMME(build['version'])
-            if not no_check_kernel_version:
-                if nextVersionDict['Extra'] == baseVersionDict['Extra']:
-                    nextRc = nextVersionDict.get('rc')
-                    baseRc = baseVersionDict.get('rc')
-                    if (nextRc is None and baseRc is None) \
-                            or (nextRc is not None and baseRc is not None and nextRc == baseRc):
-                        logger.info('Skip the check as it has the same version for %s %s', project_name, build['version'])
-                        continue
+            if exact_ver2 is not None \
+                    and not nextVersionDict['versionString'].startswith(exact_ver2):
+                # for case that second build version specified, but not this build
+                logger.info('Skip the check as it is not the specified version for %s %s', project_name, build['version'])
+                continue
+            elif not no_check_kernel_version and nextVersionDict['Extra'] == baseVersionDict['Extra']:
+                # for case that need to check kernel version, and all major, minro, extra version are the same
+                # then needs to check if the rc version is the same too
+                nextRc = nextVersionDict.get('rc')
+                baseRc = baseVersionDict.get('rc')
+                if (nextRc is None and baseRc is None) \
+                    or (nextRc is not None and baseRc is not None and nextRc == baseRc):
+                    # for case that neither build is rc version or both have the same rc version
+                    logger.info('Skip the check as it has the same version for %s %s', project_name, build['version'])
+                    continue
+                else:
+                    # for case that the rc version are different, like
+                    # 1. one build is rc version, but another is not rc version
+                    # 2. both are rc versions, but are different rc versions
+                    pass
+            else:
+                # for cases that
+                # 1. the second build version not specified, or this build has the same version like the specified second build version
+                # 2. no need to check the kernel version, or the kernel version is different, either extra version or the rc version
+                pass
 
         logger.info("Checking for %s, %s", project_name, build.get('version'))
         build_number_passed = 0
@@ -1027,15 +1060,40 @@ def find_best_two_runs(builds, project_name, project, exact, no_check_kernel_ver
             tallyNumbers(build, jobTransactionStatus)
 
             if nextVersionDict is not None:
-                if int(nextVersionDict['Extra']) > int(baseVersionDict['Extra']):
+                # add for the second build
+                if exact_ver2 is not None:
+                    if reverse_build_order:
+                        # find regression in exact_ver2 compare to exact_ver1
+                        goodruns.append(build)
+                    else:
+                        # find regression in exact_ver1 compare to exact_ver2
+                        goodruns.insert(0, build)
+
+                elif int(nextVersionDict['Extra']) > int(baseVersionDict['Extra']):
+                    # for the case the second build is newer than the first build
+                    # first build is goodruns[0], second build is goodruns[1]
+                    # normally, the builds are sorted with the newest kernel version as the first build.
                     goodruns.append(build)
                 else:
+                    # for the case the second build is older than or equal to the first build
                     goodruns.insert(0, build)
             else:
+                # add for the first build
                 goodruns.append(build)
 
             bailaftertwo += 1
+        elif bailaftertwo == 0 and exact_ver1 is not None and baseVersionDict is not None and baseVersionDict.get('versionString') == exact_ver1:
+            # found the first build with exact_ver1, but that build does not have all jobs finished successfully
+            # stop the loop for builds to find anymore
+            bailaftertwo += 1
+            return goodruns
+        elif bailaftertwo == 1 and exact_ver2 is not None and nextVersionDict is not None and nextVersionDict.get('versionString') == exact_ver2:
+            # found the second build with exact_ver2, but that build does not have all jobs finished successfully
+            # stop the loop for builds to find anymore
+            bailaftertwo += 1
+            return goodruns
         else:
+            # for case that no completed build found, continute to check the next build
             continue
 
         #if 'run_status' in build:
@@ -1112,7 +1170,8 @@ def find_best_two_runs(builds, project_name, project, exact, no_check_kernel_ver
               continue
     '''
 
-
+# Try to find the regressions in goodruns[1]
+# compared to the result in goodruns[0]
 def find_regressions(goodruns):
     runA = goodruns[1]
     failuresA = runA['failures_list']
@@ -1121,13 +1180,16 @@ def find_regressions(goodruns):
     regressions = []
     for failureA in failuresA:
         match = 0
+        testAname = failureA['test_name']
         for failureB in failuresB:
-            testAname = failureA['test_name']
             testBname = failureB['test_name']
             if testAname == testBname:
                 match = 1
                 break
         if match != 1 :
+            # for failures in goodruns[1],
+            # if they are not reported in goodruns[0],
+            # then they are regressions
             regressions.append(failureA)
     
     return regressions
@@ -1261,21 +1323,42 @@ class Command(BaseCommand):
         parser.add_argument('kernel', type=str, help='Kernel version')
         parser.add_argument('outputfile', type=str, help='Output File')
         parser.add_argument('flake', type=str, help='flakey file')
-        parser.add_argument('exact', default='No', type=str, help='exact kernel version')
         parser.add_argument("--no-check-kernel-version",
                 help="Specify if the kernel version for the build should be checked.",
                 dest="no_check_kernel_version",
                 action='store_true',
                 required=False)
 
+        parser.add_argument("--exact-version-1",
+                help="Specify the exact kernel version for the first build",
+                dest="exact_version_1",
+                default="",
+                required=False)
+        parser.add_argument("--exact-version-2",
+                help="Specify the exact kernel version for the second build",
+                dest="exact_version_2",
+                default="",
+                required=False)
+        parser.add_argument("--reverse-build-order",
+                help="When both --exact-version-1 and --exact-version-2 specified,\
+                 normally will try to find the regressions in --exact-version-1 against --exact-version-2,\
+                 but with this option, it will try to find the regressions in --exact-version-2\
+                 agains the build of --exact-version-1",
+                dest="reverse_build_order",
+                action='store_true',
+                required=False)
+
+
     def handle(self, *args, **options):
         kernel = options['kernel']
         path_outputfile = options['outputfile']
         scribblefile = path_outputfile + str(".scribble")
         path_flakefile = options['flake']
-        exact = options['exact']
 
         no_check_kernel_version = options.get('no_check_kernel_version')
+        opt_exact_ver1 = options.get('exact_version_1')
+        opt_exact_ver2 = options.get('exact_version_2')
+        reverse_build_order = options.get('reverse_build_order')
 
         # map kernel to all available kernel, board, OS combos that match
         work = []
@@ -1316,7 +1399,9 @@ class Command(BaseCommand):
             builds = qa_report_api.get_all_builds(project_id)
             
             project_name = project.get('name')
-            goodruns = find_best_two_runs(builds, project_name, project, exact, no_check_kernel_version=no_check_kernel_version)
+            goodruns = find_best_two_runs(builds, project_name, project,
+                                          exact_ver1=opt_exact_ver1, exact_ver2=opt_exact_ver2, reverse_build_order=reverse_build_order,
+                                          no_check_kernel_version=no_check_kernel_version)
             if len(goodruns) < 2 :
                 print("\nERROR project " + project_name+ " did not have 2 good runs\n")
                 output.write("\nERROR project " + project_name+ " did not have 2 good runs\n\n")
