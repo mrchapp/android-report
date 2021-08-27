@@ -80,6 +80,12 @@ rawkernels = {
             '4.19q-10.0-gsi-hikey-tuxsuite',
             '4.19q-10.0-gsi-hikey960-tuxsuite',
             ],
+    'android-mainline': [
+            'android-mainlin-x15-gitlab',
+            'android-mainlin-hikey-gitlab',
+            'android-mainlin-hikey960-gitlab',
+            'android-mainlin-db845c-gitlab',
+            ],
     ########## for normal jenkins ci builds ##########
     '4.4':[
             '4.4p-10.0-gsi-hikey',
@@ -332,6 +338,36 @@ projectids = {
                                 'OS' : 'Android10',
                                 'kern' : '4.19',
                                 'branch' : 'Android-4.19-q',},
+
+    ## for mainline
+    'android-mainlin-x15-gitlab': {
+                                'slug': 'mainline-aosp-master-x15',
+                                'group':'~yongqin.liu',
+                                'hardware': 'X15',
+                                'OS' : 'AOSP',
+                                'kern' : '5.X',
+                                'branch' : 'android-mainline',},
+    'android-mainlin-hikey-gitlab': {
+                                'slug': 'mainline-gki-aosp-master-hikey',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey',
+                                'OS' : 'AOSP',
+                                'kern' : '5.X',
+                                'branch' : 'android-mainline',},
+    'android-mainlin-hikey960-gitlab': {
+                                'slug': 'mainline-gki-aosp-master-hikey960',
+                                'group':'~yongqin.liu',
+                                'hardware': 'HiKey960',
+                                'OS' : 'AOSP',
+                                'kern' : '5.X',
+                                'branch' : 'android-mainline',},
+    'android-mainlin-db845c-gitlab': {
+                                'slug': 'mainline-gki-aosp-master-db845c',
+                                'group':'~yongqin.liu',
+                                'hardware': 'db845',
+                                'OS' : 'AOSP',
+                                'kern' : '5.X',
+                                'branch' : 'android-mainline',},
 
     ########## for jenkins ci builds ###################
     '4.4o-8.1-hikey':
@@ -1229,31 +1265,39 @@ def print_androidresultheader(output, project_info, run, priorrun):
     prior_build_metadata = get_build_metadata(build_metadata_url=priorrun.get('metadata'))
 
 
+    def get_last_of_metadata(metadata):
+        if metadata is None:
+            return None
+        if type(metadata) is str:
+            return metadata
+        if type(metadata) is list:
+            return metadata[-1]
+
     if build_metadata.get('gsi_fingerprint', None):
         output.write("    " + "GSI Fingerprint:" + " - " )
-        if build_metadata.get('gsi_fingerprint') == prior_build_metadata.get('gsi_fingerprint', 'UNKNOWN'):
-            output.write("Current:" + build_metadata.get('gsi_fingerprint') + " == Prior:" + prior_build_metadata.get('gsi_fingerprint', 'UNKNOWN') + "\n")
+        if get_last_of_metadata(build_metadata.get('gsi_fingerprint')) == get_last_of_metadata(prior_build_metadata.get('gsi_fingerprint', 'UNKNOWN')):
+            output.write("Current:" + get_last_of_metadata(build_metadata.get('gsi_fingerprint')) + " == Prior:" + get_last_of_metadata(prior_build_metadata.get('gsi_fingerprint', 'UNKNOWN')) + "\n")
         else:
-            output.write("Current:" + build_metadata.get('gsi_fingerprint') + " != Prior:" + prior_build_metadata.get('gsi_fingerprint', 'UNKNOWN') + "\n")
+            output.write("Current:" + get_last_of_metadata(build_metadata.get('gsi_fingerprint')) + " != Prior:" + get_last_of_metadata(prior_build_metadata.get('gsi_fingerprint', 'UNKNOWN')) + "\n")
 
     if build_metadata.get('vendor_fingerprint', None):
         output.write("    " + "Vendor Fingerprint:" + " - " )
-        if build_metadata.get('vendor_fingerprint') == prior_build_metadata.get('vendor_fingerprint', 'UNKNOWN'):
-            output.write("Current:" + build_metadata.get('vendor_fingerprint') + " == Prior:" + prior_build_metadata.get('vendor_fingerprint', 'UNKNOWN') + "\n")
+        if get_last_of_metadata(build_metadata.get('vendor_fingerprint')) == get_last_of_metadata(prior_build_metadata.get('vendor_fingerprint', 'UNKNOWN')):
+            output.write("Current:" + get_last_of_metadata(build_metadata.get('vendor_fingerprint')) + " == Prior:" + get_last_of_metadata(prior_build_metadata.get('vendor_fingerprint', 'UNKNOWN')) + "\n")
         else:
-            output.write("Current:" + build_metadata.get('vendor_fingerprint') + " != Prior:" + prior_build_metadata.get('vendor_fingerprint', 'UNKNOWN') + "\n")
+            output.write("Current:" + get_last_of_metadata(build_metadata.get('vendor_fingerprint')) + " != Prior:" + get_last_of_metadata(prior_build_metadata.get('vendor_fingerprint', 'UNKNOWN')) + "\n")
 
     output.write("    " + "CTS Version:" + " - " )
-    if build_metadata.get('cts_version', 'UNKNOWN') == prior_build_metadata.get('cts_version', 'UNKNOWN'):
-        output.write("Current:" + build_metadata.get('cts_version', 'UNKNOWN') + " == Prior:" + prior_build_metadata.get('cts_version', 'UNKNOWN') + "\n")
+    if get_last_of_metadata(build_metadata.get('cts_version', 'UNKNOWN')) == get_last_of_metadata(prior_build_metadata.get('cts_version', 'UNKNOWN')):
+        output.write("Current:" + get_last_of_metadata(build_metadata.get('cts_version', 'UNKNOWN')) + " == Prior:" + get_last_of_metadata(prior_build_metadata.get('cts_version', 'UNKNOWN')) + "\n")
     else:
-        output.write("Current:" + build_metadata.get('cts_version', 'UNKNOWN') + " != Prior:" + prior_build_metadata.get('cts_version', 'UNKNOWN') + "\n")
+        output.write("Current:" + get_last_of_metadata(build_metadata.get('cts_version', 'UNKNOWN')) + " != Prior:" + get_last_of_metadata(prior_build_metadata.get('cts_version', 'UNKNOWN')) + "\n")
 
     output.write("    " + "VTS Version:" + " - " )
-    if build_metadata.get('vts_version', 'UNKNOWN') == prior_build_metadata.get('vts_version', 'UNKNOWN'):
-        output.write("Current:" + build_metadata.get('vts_version', 'UNKNOWN') + " == Prior:" + prior_build_metadata.get('vts_version', 'UNKNOWN') + "\n")
+    if get_last_of_metadata(build_metadata.get('vts_version', 'UNKNOWN')) == get_last_of_metadata(prior_build_metadata.get('vts_version', 'UNKNOWN')):
+        output.write("Current:" + get_last_of_metadata(build_metadata.get('vts_version', 'UNKNOWN')) + " == Prior:" + get_last_of_metadata(prior_build_metadata.get('vts_version', 'UNKNOWN')) + "\n")
     else:
-        output.write("Current:" + build_metadata.get('vts_version', 'UNKNOWN') + " != Prior:" + prior_build_metadata.get('vts_version', 'UNKNOWN') + "\n")
+        output.write("Current:" + get_last_of_metadata(build_metadata.get('vts_version', 'UNKNOWN')) + " != Prior:" + get_last_of_metadata(prior_build_metadata.get('vts_version', 'UNKNOWN')) + "\n")
 
 
 def add_unique_kernel(unique_kernels, kernel_version, combo, unique_kernel_info):
