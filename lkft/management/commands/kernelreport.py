@@ -828,19 +828,11 @@ def versiontoMME(versionString):
 
     return versionDict
 
-#     number_passed = 0
-#    number_failed = 0
-#    number_assumption_failure = 0
-#    number_ignored = 0
-#    number_total = 0
-#    modules_done = 0
-#    modules_total = 0
-#    jobs_finished = 0
-#    jobs_total = 0
 
 def tallyNumbers(build, jobTransactionStatus):
     buildNumbers = build['numbers']
-    if 'numbers' in jobTransactionStatus['vts-job']:
+    if jobTransactionStatus['vts-job'] is not None and \
+            'numbers' in jobTransactionStatus['vts-job']:
         buildNumbers['failed_number'] += jobTransactionStatus['vts-job']['numbers'].number_failed
         buildNumbers['passed_number'] += jobTransactionStatus['vts-job']['numbers'].number_passed
         buildNumbers['ignored_number'] += jobTransactionStatus['vts-job']['numbers'].number_ignored
@@ -904,7 +896,7 @@ def markjob(job, jobTransactionStatus):
        if jobTransactionStatus['vts-v7'] == 'true':
            jobTransactionStatus['vts'] = 'true'
 
-    if vtsv7result is not None: 
+    elif vtsv7result is not None:
        jobTransactionStatus['vts-v7'] = 'true'
        # take the later of the two results
        if jobTransactionStatus['vts-v7-job'] is None:
@@ -916,7 +908,7 @@ def markjob(job, jobTransactionStatus):
        if jobTransactionStatus['vts-v8'] == 'true':
            jobTransactionStatus['vts'] = 'true'
 
-    if vtsresult is not None:
+    elif vtsresult is not None:
        jobTransactionStatus['vts'] = 'true'
        # take the later of the two results
        if jobTransactionStatus['vts-job'] is None:
@@ -925,7 +917,8 @@ def markjob(job, jobTransactionStatus):
            origjobTime = parser.parse(jobTransactionStatus['vts-job']['created_at'])
            if newjobTime > origjobTime :
                jobTransactionStatus['vts-job'] = job
-    if ctsresult is not None :
+
+    elif ctsresult is not None :
        jobTransactionStatus['cts'] = 'true'
        # take the later of the two results
        if jobTransactionStatus['cts-job'] is None:
@@ -934,7 +927,7 @@ def markjob(job, jobTransactionStatus):
            origjobTime = parser.parse(jobTransactionStatus['cts-job']['created_at'])
            if newjobTime > origjobTime :
                jobTransactionStatus['cts-job'] = job
-    if bootresult is not None :
+    elif bootresult is not None :
        jobTransactionStatus['boot'] = 'true'
        # take the later of the two results
        if jobTransactionStatus['boot-job'] is None:
@@ -1012,26 +1005,6 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
             #print "in progress"
             continue
            
-        # print "ok great should be complete" 
-        '''
-        if number_of_build_with_jobs < BUILD_WITH_JOBS_NUMBER:
-            build_numbers = get_test_result_number_for_build(build, jobs)
-            build_number_passed = build_number_passed + build_numbers.get('number_passed')
-            build_number_failed = build_number_failed + build_numbers.get('number_failed')
-            build_number_total = build_number_total + build_numbers.get('number_total')
-            build_modules_total = build_modules_total + build_numbers.get('modules_total')
-            build_modules_done = build_modules_done + build_numbers.get('modules_done')
-            number_of_build_with_jobs = number_of_build_with_jobs + 1
-            #print "numbers passed in build" + str(build_number_passed)
-        number_of_build_with_jobs = number_of_build_with_jobs + 1
-        build['numbers'] = {
-                           'passed_number': build_number_passed,
-                           'failed_number': build_number_failed,
-                           'total_number': build_number_total,
-                           'modules_done': build_modules_done,
-                           'modules_total': build_modules_total,
-                           }
-        '''
         build['numbers'] = {
                            'passed_number': 0,
                            'failed_number': 0,
@@ -1044,8 +1017,6 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
         build['jobs'] = jobs
         if not jobs:
             continue
-        #if build_number_passed == 0:
-        #    continue
 
         download_attachments_save_result(jobs=jobs)
             
@@ -1053,8 +1024,16 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
         resubmitted_job_urls = []
        
         jobisacceptable=1 
-        jobTransactionStatus = { 'vts' : 'maybe', 'cts' : 'maybe', 'boot': 'maybe', 'vts-v7' : 'maybe', 'vts-v8' : 'maybe',
-                                 'vts-job' : None, 'cts-job' : None, 'boot-job' : None, 'vts-v7-job': None, 'vts-v8-job': None }
+        jobTransactionStatus = {'vts' : 'maybe',
+                                'cts' : 'maybe',
+                                'boot': 'maybe',
+                                'vts-v7' : 'maybe',
+                                'vts-v8' : 'maybe',
+                                'vts-job' : None,
+                                'cts-job' : None,
+                                'boot-job' : None,
+                                'vts-v7-job': None,
+                                'vts-v8-job': None }
 
         #pdb.set_trace()
         for job in jobs:
@@ -1132,21 +1111,6 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
             # for case that no completed build found, continute to check the next build
             continue
 
-        #if 'run_status' in build:
-        #   # print "found run status" + "build " + str(build.get("id")) + " NOT selected"
-        #    continue
-        #else:
-        #   # print "run status NOT found" + "build " + str(build.get("id")) + " selected"
-        #   if bailaftertwo == 0 :
-        #       baseVersionDict = versiontoMME(build['version'])
-        #       # print "baseset"
-        #   elif bailaftertwo == 1 :
-        #       nextVersionDict = versiontoMME(build['version'])
-        #       if nextVersionDict['Extra'] == baseVersionDict['Extra'] :
-        #           continue
-        #   goodruns.append(build)
-        #   bailaftertwo += 1
-
         #pdb.set_trace()
         failures_list = []
         for module_name in sorted(failures.keys()):
@@ -1173,38 +1137,6 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
         build['failures_list'] = failures_list
 
     return goodruns
-
-    '''
-              if jobstatus == 'Incomplete' :
-        for job in jobs:
-           pdb.set_trace()
-           if job.get('job_status') is None and \
-              job.get('submitted') and \
-              not job.get('fetched'):
-              job['job_status'] = 'Submitted'
-              jobisaacceptable = 0
-
-           if job.get('failure'):
-              failure = job.get('failure')
-              new_str = failure.replace('"', '\\"').replace('\'', '"')
-              try:
-                 failure_dict = json.loads(new_str)
-              except ValueError:
-                 failure_dict = {'error_msg': new_str}
-           if job.get('parent_job'):
-              resubmitted_job_urls.append(job.get('parent_job'))
-
-           if job['job_status'] == 'Submitted':
-              jobisacceptable = 0
-           if jobisacceptable == 0:
-              build['run_status'] = 'Submitted'
-
-           # print "job " + job.get('job_id') + " " + job['job_status']
-
-           result_file_path = get_result_file_path(job=job)
-           if not result_file_path or not os.path.exists(result_file_path):
-              continue
-    '''
 
 # Try to find the regressions in goodruns[1]
 # compared to the result in goodruns[0]
@@ -1321,16 +1253,16 @@ def report_results(output, run, regressions, combo, priorrun, flakes, antiregres
     output.write(project_info['branch'] + "\n")
     print_androidresultheader(output, project_info, run, priorrun)
     #pdb.set_trace()
-    output.write("    " + str(len(regressions)) + " Regressions ")
-    output.write(str(numbers['failed_number']) + " Failures ") 
-    output.write(str(numbers['passed_number']) + " Passed ")
+    output.write("    " + str(len(antiregressions)) + " Prior Failures now pass\n")
+    output.write("    " + str(len(regressions)) + " Regressions of ")
+    output.write(str(numbers['failed_number']) + " Failures, ")
+    output.write(str(numbers['passed_number']) + " Passed, ")
     if numbers['ignored_number'] > 0 :
-        output.write(str(numbers['ignored_number']) + " Ignored ")
+        output.write(str(numbers['ignored_number']) + " Ignored, ")
     if numbers['assumption_failure'] > 0 :
-        output.write(str(numbers['assumption_failure']) + " Assumption Failures ")
-    output.write( str(numbers['total_number']) + " Total - " )
-    output.write("Modules Run: " + str(numbers['modules_done']) + " Module Total: "+str(numbers['modules_total'])+"\n")
-    output.write("    "+str(len(antiregressions)) + " Prior Failures now pass\n")
+        output.write(str(numbers['assumption_failure']) + " Assumption Failures, ")
+    output.write( str(numbers['total_number']) + " Total\n" )
+    output.write("    " + "Modules Run: " + str(numbers['modules_done']) + " Module Total: "+str(numbers['modules_total'])+"\n")
     for regression in regressions:
         # pdb.set_trace()
         if 'baseOS' in project_info: 
@@ -1341,6 +1273,16 @@ def report_results(output, run, regressions, combo, priorrun, flakes, antiregres
         # def classifyTest(flakeDicts, testcasename, hardware, kernel, android):
         #output.write("        " + testtype + " " + regression['test_name'] + "\n")
         output.write("        " + testtype + " " + regression['module_name'] +"." + regression['test_name'] + "\n")
+
+    if len(regressions) > 0:
+        output.write("    " + "Current jobs\n")
+        for job in run['jobs']:
+            output.write("        " + "%s %s\n" % (job.get('external_url'), job.get('name')))
+        output.write("    " + "Prior jobs\n")
+        for job in priorrun['jobs']:
+            output.write("        " + "%s %s\n" % (job.get('external_url'), job.get('name')))
+
+    output.write("\n")
 
 
 def report_kernels_in_report(path_outputfile, unique_kernels, unique_kernel_info):
