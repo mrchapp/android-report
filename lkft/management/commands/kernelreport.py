@@ -81,10 +81,10 @@ rawkernels = {
             '4.19q-10.0-gsi-hikey960-tuxsuite',
             ],
     'android-mainline': [
+            'android-mainlin-db845c-gitlab',
+            'android-mainlin-hikey960-gitlab',
             'android-mainlin-x15-gitlab',
             'android-mainlin-hikey-gitlab',
-            'android-mainlin-hikey960-gitlab',
-            'android-mainlin-db845c-gitlab',
             ],
     ########## for normal jenkins ci builds ##########
     '4.4':[
