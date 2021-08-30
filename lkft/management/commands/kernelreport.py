@@ -831,7 +831,8 @@ def versiontoMME(versionString):
 
 def tallyNumbers(build, jobTransactionStatus):
     buildNumbers = build['numbers']
-    if 'numbers' in jobTransactionStatus['vts-job']:
+    if jobTransactionStatus['vts-job'] is not None and \
+            'numbers' in jobTransactionStatus['vts-job']:
         buildNumbers['failed_number'] += jobTransactionStatus['vts-job']['numbers'].number_failed
         buildNumbers['passed_number'] += jobTransactionStatus['vts-job']['numbers'].number_passed
         buildNumbers['ignored_number'] += jobTransactionStatus['vts-job']['numbers'].number_ignored
@@ -895,7 +896,7 @@ def markjob(job, jobTransactionStatus):
        if jobTransactionStatus['vts-v7'] == 'true':
            jobTransactionStatus['vts'] = 'true'
 
-    if vtsv7result is not None: 
+    elif vtsv7result is not None:
        jobTransactionStatus['vts-v7'] = 'true'
        # take the later of the two results
        if jobTransactionStatus['vts-v7-job'] is None:
@@ -907,7 +908,7 @@ def markjob(job, jobTransactionStatus):
        if jobTransactionStatus['vts-v8'] == 'true':
            jobTransactionStatus['vts'] = 'true'
 
-    if vtsresult is not None:
+    elif vtsresult is not None:
        jobTransactionStatus['vts'] = 'true'
        # take the later of the two results
        if jobTransactionStatus['vts-job'] is None:
@@ -916,7 +917,8 @@ def markjob(job, jobTransactionStatus):
            origjobTime = parser.parse(jobTransactionStatus['vts-job']['created_at'])
            if newjobTime > origjobTime :
                jobTransactionStatus['vts-job'] = job
-    if ctsresult is not None :
+
+    elif ctsresult is not None :
        jobTransactionStatus['cts'] = 'true'
        # take the later of the two results
        if jobTransactionStatus['cts-job'] is None:
@@ -925,7 +927,7 @@ def markjob(job, jobTransactionStatus):
            origjobTime = parser.parse(jobTransactionStatus['cts-job']['created_at'])
            if newjobTime > origjobTime :
                jobTransactionStatus['cts-job'] = job
-    if bootresult is not None :
+    elif bootresult is not None :
        jobTransactionStatus['boot'] = 'true'
        # take the later of the two results
        if jobTransactionStatus['boot-job'] is None:
@@ -1015,8 +1017,6 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
         build['jobs'] = jobs
         if not jobs:
             continue
-        #if build_number_passed == 0:
-        #    continue
 
         download_attachments_save_result(jobs=jobs)
             
@@ -1024,8 +1024,16 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
         resubmitted_job_urls = []
        
         jobisacceptable=1 
-        jobTransactionStatus = { 'vts' : 'maybe', 'cts' : 'maybe', 'boot': 'maybe', 'vts-v7' : 'maybe', 'vts-v8' : 'maybe',
-                                 'vts-job' : None, 'cts-job' : None, 'boot-job' : None, 'vts-v7-job': None, 'vts-v8-job': None }
+        jobTransactionStatus = {'vts' : 'maybe',
+                                'cts' : 'maybe',
+                                'boot': 'maybe',
+                                'vts-v7' : 'maybe',
+                                'vts-v8' : 'maybe',
+                                'vts-job' : None,
+                                'cts-job' : None,
+                                'boot-job' : None,
+                                'vts-v7-job': None,
+                                'vts-v8-job': None }
 
         #pdb.set_trace()
         for job in jobs:
