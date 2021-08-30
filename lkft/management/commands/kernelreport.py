@@ -1245,16 +1245,16 @@ def report_results(output, run, regressions, combo, priorrun, flakes, antiregres
     output.write(project_info['branch'] + "\n")
     print_androidresultheader(output, project_info, run, priorrun)
     #pdb.set_trace()
-    output.write("    " + str(len(regressions)) + " Regressions ")
-    output.write(str(numbers['failed_number']) + " Failures ") 
-    output.write(str(numbers['passed_number']) + " Passed ")
+    output.write("    " + str(len(antiregressions)) + " Prior Failures now pass\n")
+    output.write("    " + str(len(regressions)) + " Regressions of ")
+    output.write(str(numbers['failed_number']) + " Failures, ")
+    output.write(str(numbers['passed_number']) + " Passed, ")
     if numbers['ignored_number'] > 0 :
-        output.write(str(numbers['ignored_number']) + " Ignored ")
+        output.write(str(numbers['ignored_number']) + " Ignored, ")
     if numbers['assumption_failure'] > 0 :
-        output.write(str(numbers['assumption_failure']) + " Assumption Failures ")
-    output.write( str(numbers['total_number']) + " Total - " )
-    output.write("Modules Run: " + str(numbers['modules_done']) + " Module Total: "+str(numbers['modules_total'])+"\n")
-    output.write("    "+str(len(antiregressions)) + " Prior Failures now pass\n")
+        output.write(str(numbers['assumption_failure']) + " Assumption Failures, ")
+    output.write( str(numbers['total_number']) + " Total\n" )
+    output.write("    " + "Modules Run: " + str(numbers['modules_done']) + " Module Total: "+str(numbers['modules_total'])+"\n")
     for regression in regressions:
         # pdb.set_trace()
         if 'baseOS' in project_info: 
@@ -1265,6 +1265,16 @@ def report_results(output, run, regressions, combo, priorrun, flakes, antiregres
         # def classifyTest(flakeDicts, testcasename, hardware, kernel, android):
         #output.write("        " + testtype + " " + regression['test_name'] + "\n")
         output.write("        " + testtype + " " + regression['module_name'] +"." + regression['test_name'] + "\n")
+
+    if len(regressions) > 0:
+        output.write("    " + "Current jobs\n")
+        for job in run['jobs']:
+            output.write("        " + "%s %s\n" % (job.get('external_url'), job.get('name')))
+        output.write("    " + "Prior jobs\n")
+        for job in priorrun['jobs']:
+            output.write("        " + "%s %s\n" % (job.get('external_url'), job.get('name')))
+
+    output.write("\n")
 
 
 def report_kernels_in_report(path_outputfile, unique_kernels, unique_kernel_info):
