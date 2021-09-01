@@ -268,6 +268,9 @@ def download_attachments_save_result(jobs=[], fetch_latest=False):
                                             job_id=job_id)))
 
             save_testcases_with_bulk_call(testcase_objs=testcase_objs)
+            report_job.finished_successfully = True
+            job['numbers'] = qa_report.TestNumbers().toHash()
+            job['numbers']['finished_successfully'] = report_job.finished_successfully
 
         elif is_cts_vts_job(job.get('name')):
             # for cts /vts jobs
@@ -305,18 +308,25 @@ def download_attachments_save_result(jobs=[], fetch_latest=False):
                 save_tradeded_results_to_database(result_file_path, job, report_job)
                 logger.info("After call save_tradeded_results_to_database: %s %s" % (job_url, job.get('name')))
 
+                # job['numbers'] and job['numbers']['finished_successfully'] are set
+                # in the function of get_testcases_number_for_job
                 job_numbers = get_testcases_number_for_job(job)
                 qa_report.TestNumbers.setHashValueForDatabaseRecord(report_job, job_numbers)
+                # need to set this finished_successfully explictly here
+                # as it depends on the value from job_numbers, and the above line does not set it correctly
+                # the finished_successfully depends on the real number of modules_total
+                report_job.finished_successfully = job_numbers.get('finished_successfully')
             else:
                 # for cases that test_result.xml does not exist in the tradefed result attachment zip file
                 logger.info("Failed to save the test_result.xml file locally for : %s %s" % (job_url, job.get('name')))
                 continue
         else:
             # for other jobs like the boot job and other benchmark jobs
-            pass
+            report_job.finished_successfully = True
+            job['numbers'] = qa_report.TestNumbers().toHash()
+            job['numbers']['finished_successfully'] = report_job.finished_successfully
 
         report_job.results_cached = True
-        report_job.finished_successfully = True
         report_job.save()
 
 
@@ -1205,6 +1215,34 @@ def get_build_from_database_or_qareport(build_id, force_fetch_from_qareport=Fals
     return (qareport_build, db_report_build)
 
 
+def get_job_hash_with_db_record(db_report_job):
+    job = {}
+    job['external_url'] = db_report_job.job_url
+    job['name'] = db_report_job.job_name
+    job['attachment_url'] = db_report_job.attachment_url
+    job['id'] = db_report_job.qa_job_id
+    job['parent_job'] = db_report_job.parent_job
+    job['job_status'] = db_report_job.status
+    job['environment'] = db_report_job.environment
+    job['target'] = qa_report_api.get_project_api_url_with_project_id(db_report_job.report_build.qa_project.project_id)
+    job['target_build'] = qa_report_api.get_build_api_url_with_build_id(db_report_job.report_build.qa_build_id)
+    job['submitted'] = True
+    job['submitted_at'] = db_report_job.submitted_at
+    if db_report_job.fetched_at:
+        job['fetched'] = True
+        job['fetched_at'] = db_report_job.fetched_at
+
+    job['job_id'] = qa_report_api.get_qa_job_id_with_url(db_report_job.job_url)
+    lava_config = find_lava_config(db_report_job.job_url)
+    if lava_config:
+        job['lava_config'] = lava_config
+
+    if db_report_job.failure_msg:
+        job['failure'] = {'error_msg': db_report_job.failure_msg}
+
+    return job
+
+
 def get_jobs_for_build_from_db_or_qareport(build_id=None, force_fetch_from_qareport=False):
     needs_fetch_jobs = False
 
@@ -1222,30 +1260,7 @@ def get_jobs_for_build_from_db_or_qareport(build_id=None, force_fetch_from_qarep
             needs_fetch_jobs = True
         else:
             for db_report_job in db_report_jobs:
-                job = {}
-                job['external_url'] = db_report_job.job_url
-                job['name'] = db_report_job.job_name
-                job['attachment_url'] = db_report_job.attachment_url
-                job['id'] = db_report_job.qa_job_id
-                job['parent_job'] = db_report_job.parent_job
-                job['job_status'] = db_report_job.status
-                job['environment'] = db_report_job.environment
-                job['target'] = qa_report_api.get_project_api_url_with_project_id(db_report_job.report_build.qa_project.project_id)
-                job['target_build'] = qa_report_api.get_build_api_url_with_build_id(db_report_job.report_build.qa_build_id)
-                job['submitted'] = True
-                job['submitted_at'] = db_report_job.submitted_at
-                if db_report_job.fetched_at:
-                    job['fetched'] = True
-                    job['fetched_at'] = db_report_job.fetched_at
-
-                job['job_id'] = qa_report_api.get_qa_job_id_with_url(db_report_job.job_url)
-                lava_config = find_lava_config(db_report_job.job_url)
-                if lava_config:
-                    job['lava_config'] = lava_config
-
-                if db_report_job.failure_msg:
-                    job['failure'] = {'error_msg': db_report_job.failure_msg}
-                jobs.append(job)
+                jobs.append(get_job_hash_with_db_record(db_report_job))
 
     if force_fetch_from_qareport or needs_fetch_jobs:
         jobs = qa_report_api.get_jobs_for_build(build_id)

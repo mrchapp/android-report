@@ -987,11 +987,6 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
                 pass
 
         logger.info("Checking for %s, %s", project_name, build.get('version'))
-        build_number_passed = 0
-        build_number_failed = 0
-        build_number_total = 0
-        build_modules_total = 0
-        build_modules_done = 0
         build['created_at'] = qa_report_api.get_aware_datetime_from_str(build.get('created_at'))
         jobs = qa_report_api.get_jobs_for_build(build.get("id"))
         jobs_to_be_checked = get_classified_jobs(jobs=jobs).get('final_jobs')
@@ -1036,16 +1031,16 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
                                 'vts-v8-job': None }
 
         #pdb.set_trace()
+        total_jobs_finished_number = 0
         for job in jobs:
-            ctsSymbol = re.compile('-cts')
-
-            ctsresult = ctsSymbol.search(job['name'])
             jobstatus = job['job_status']
             jobfailure = job['failure']
-            if ctsresult is not None:
-                print("cts job" + str(jobfailure) + '\n')
-            if jobstatus == 'Complete' and jobfailure is None :
+            # for some failed cases, numbers are not set for the job
+            job_numbers = job.get('numbers', None)
+            if jobstatus == 'Complete' and jobfailure is None and \
+                    job_numbers is not None and job_numbers.get('finished_successfully'):
                 markjob(job, jobTransactionStatus)
+                total_jobs_finished_number = total_jobs_finished_number + 1
 
             result_file_path = get_result_file_path(job=job)
             if not result_file_path or not os.path.exists(result_file_path):
@@ -1062,13 +1057,19 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
                           'kernel_version': kernel_version,
                           'platform': platform,
                         }
-            numbers = extract(result_file_path, failed_testcases_all=failures, metadata=metadata)
-            job['numbers'] = numbers
+            extract(result_file_path, failed_testcases_all=failures, metadata=metadata)
+            # this line overrides the numbers set within the function of download_attachments_save_result
+            test_numbers = qa_report.TestNumbers()
+            test_numbers.addWithHash(job['numbers'])
+            job['numbers'] = test_numbers
 
         # now let's see what we have. Do we have a complete yet?
-        print("vts: "+ jobTransactionStatus['vts'] + " cts: "+jobTransactionStatus['cts'] + " boot: " +jobTransactionStatus['boot'] +'\n')
+        print("vts: "+ jobTransactionStatus['vts'] + " cts: "+jobTransactionStatus['cts'] + " boot: " +jobTransactionStatus['boot'])
+        print("Total Finished Jobs Number / Total Jobs Number: %d / %d" % (total_jobs_finished_number, len(jobs)))
 
-        if jobTransactionStatus['vts'] == 'true' and jobTransactionStatus['cts'] == 'true':
+        # when the finished successfully jobs number is the same as the number of all jobs
+        # it means all the jobs are finished successfully, the build is OK to be used for comparisonfin
+        if len(jobs) == total_jobs_finished_number:
             # and jobTransactionStatus['boot'] == 'true' :
             #pdb.set_trace()
 
