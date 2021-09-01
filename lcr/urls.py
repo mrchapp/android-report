@@ -35,3 +35,10 @@ if settings.ENABLE_APP_REPORT:
     urlpatterns = urlpatterns + [
             url(r'^report/', include('report.urls')), ## TO BE UPDATED, to uncomment when enable the lcr report app
         ]
+
+if settings.DEBUG:
+    import debug_toolbar
+
+    urlpatterns += [
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    ]
