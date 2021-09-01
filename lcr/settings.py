@@ -187,6 +187,15 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+if DEBUG:
+    INSTALLED_APPS.append('debug_toolbar')
+    MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
+    DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+    INTERNAL_IPS = [
+            '127.0.0.1',
+        ]
+
+
 ROOT_URLCONF = 'lcr.urls'
 
 TEMPLATES = [
@@ -255,6 +264,7 @@ else:
         os.path.join(BASE_DIR, "static"),
     ]
 
+# https://docs.djangoproject.com/en/dev/topics/logging/
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -299,7 +309,8 @@ LOGGING = {
         'django': {
             'handlers':['console', 'logfile'],
             'propagate': True,
-            'level':'WARN',
+            # https://getkt.com/blog/how-to-view-converted-sql-queries-of-django-orm/
+            'level':'INFO',
         },
         'django.request': {
             #'handlers': ['mail_admins'],
