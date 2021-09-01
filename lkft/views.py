@@ -268,6 +268,9 @@ def download_attachments_save_result(jobs=[], fetch_latest=False):
                                             job_id=job_id)))
 
             save_testcases_with_bulk_call(testcase_objs=testcase_objs)
+            report_job.finished_successfully = True
+            job['numbers'] = qa_report.TestNumbers().toHash()
+            job['numbers']['finished_successfully'] = report_job.finished_successfully
 
         elif is_cts_vts_job(job.get('name')):
             # for cts /vts jobs
@@ -305,18 +308,25 @@ def download_attachments_save_result(jobs=[], fetch_latest=False):
                 save_tradeded_results_to_database(result_file_path, job, report_job)
                 logger.info("After call save_tradeded_results_to_database: %s %s" % (job_url, job.get('name')))
 
+                # job['numbers'] and job['numbers']['finished_successfully'] are set
+                # in the function of get_testcases_number_for_job
                 job_numbers = get_testcases_number_for_job(job)
                 qa_report.TestNumbers.setHashValueForDatabaseRecord(report_job, job_numbers)
+                # need to set this finished_successfully explictly here
+                # as it depends on the value from job_numbers, and the above line does not set it correctly
+                # the finished_successfully depends on the real number of modules_total
+                report_job.finished_successfully = job_numbers.get('finished_successfully')
             else:
                 # for cases that test_result.xml does not exist in the tradefed result attachment zip file
                 logger.info("Failed to save the test_result.xml file locally for : %s %s" % (job_url, job.get('name')))
                 continue
         else:
             # for other jobs like the boot job and other benchmark jobs
-            pass
+            report_job.finished_successfully = True
+            job['numbers'] = qa_report.TestNumbers().toHash()
+            job['numbers']['finished_successfully'] = report_job.finished_successfully
 
         report_job.results_cached = True
-        report_job.finished_successfully = True
         report_job.save()
 
 
