@@ -16,6 +16,12 @@ instance_name="android-report"
 instance_report_app="report"
 instance_dir="${work_root}/${instance_name}"
 
+if ! which sudo; then
+    # try to install the sudo package if it's not installed by default
+    # as the following steps need to run with sudo
+    apt-get update && apt-get install sudo
+fi
+
 sudo apt-get update
 ## dependency for python-ldap
 sudo apt-get install -y curl libsasl2-dev python-dev python3-dev libldap2-dev libssl-dev gcc libjpeg-dev libpq-dev
