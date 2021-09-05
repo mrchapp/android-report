@@ -19,7 +19,7 @@ instance_dir="${work_root}/${instance_name}"
 if ! which sudo; then
     # try to install the sudo package if it's not installed by default
     # as the following steps need to run with sudo
-    apt-get update && apt-get install sudo
+    apt-get update && apt-get install -y sudo
 fi
 
 sudo apt-get update
