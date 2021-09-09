@@ -110,6 +110,7 @@ rawkernels = {
             '4.14-stable-master-hikey960-lkft',
             '4.14-stable-master-hikey-lkft',
             '4.14-stable-aosp-x15',
+            '4.14-stable-android11-hikey960-lkft',
             '4.14q-10.0-gsi-hikey960',
             '4.14q-10.0-gsi-hikey',
             '4.14p-10.0-gsi-hikey960',
@@ -118,18 +119,23 @@ rawkernels = {
             '4.14p-9.0-hikey',
             ],
     '4.19':[
+            '4.19-stable-master-hikey960-lkft',
+            '4.19-stable-master-hikey-lkft',
+            '4.19-stable-android11-hikey960-lkft',
             '4.19q-10.0-gsi-hikey960',
             '4.19q-10.0-gsi-hikey',
             '4.19-stable-aosp-x15',
             ],
     '5.4':[
-            '5.4-gki-aosp-master-db845c',
-            '5.4-gki-aosp-master-hikey960',
-            '5.4-aosp-master-x15',
-            '5.4-lts-gki-android11-android11-hikey960',
-            '5.4-lts-gki-android11-android11-db845c',
-            '5.4-gki-android11-android11-hikey960',
-            '5.4-gki-android11-android11-db845c',
+            '5.4-gki-aosp-master-db845c',  # android12-5.4
+            '5.4-gki-aosp-master-hikey960', # android12-5.4
+            '5.4-aosp-master-x15', # android12-5.4
+            '5.4-lts-gki-android11-android11-hikey960', # android11-5.4-lts
+            '5.4-lts-gki-android11-android11-db845c', # android11-5.4-lts
+            '5.4-gki-android11-android11-hikey960', # android11-5.4
+            '5.4-gki-android11-android11-db845c', # android11-5.4
+            '5.4-gki-android11-aosp-master-db845c', # android11-5.4
+            '5.4-gki-android11-aosp-master-hikey960', # android11-5.4
             ],
     '5.10':[
             '5.10-gki-android13-aosp-master-db845c',
@@ -146,8 +152,12 @@ rawkernels = {
             '5.10-gki-private-android12-hikey960',
             ],
     'EAP54':[
-            '5.4-gki-private-android12-db845c',
-            '5.4-gki-private-android12-hikey960',
+            '5.4-gki-private-android12-db845c', # android12-5.4
+            '5.4-gki-private-android12-hikey960', # android12-5.4
+            '5.4-lts-gki-android12-private-android12-db845c', # android12-5.4-lts
+            '5.4-lts-gki-android12-private-android12-hikey960', # android12-5.4-lts
+            '5.4-gki-android11-private-android12-db845c', # android11-5.4
+            '5.4-gki-android11-private-android12-hikey960', # android11-5.4
             ],
     'mainline':[
             'mainline-gki-aosp-master-db845c',
@@ -523,6 +533,35 @@ projectids = {
                      'OS' : 'AOSP',
                      'kern' : '4.14',
                      'branch': 'Android-4.14-stable',},
+    '4.14-stable-android11-hikey960-lkft':
+                    {'slug': '4.14-stable-android11-hikey960-lkft',
+                     'group':'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'Android11',
+                     'kern' : '4.14',
+                     'branch': 'Android-4.14-stable',},
+
+    '4.19-stable-master-hikey960-lkft':
+                    {'slug': '4.19-stable-master-hikey960-lkft',
+                     'group':'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'AOSP',
+                     'kern' : '4.19',
+                     'branch': 'Android-4.19-stable',},
+    '4.19-stable-master-hikey-lkft':
+                    {'slug': '4.19-stable-master-hikey-lkft',
+                     'group':'android-lkft',
+                     'hardware': 'HiKey',
+                     'OS' : 'AOSP',
+                     'kern' : '4.19',
+                     'branch': 'Android-4.19-stable',},
+    '4.19-stable-android11-hikey960-lkft':
+                    {'slug': '4.19-stable-android11-hikey960-lkft',
+                     'group':'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'Android11',
+                     'kern' : '4.19',
+                     'branch': 'Android-4.19-stable',},
     '4.19q-10.0-gsi-hikey':
                     {'project_id': 210, 
                      'hardware': 'HiKey',
@@ -541,48 +580,68 @@ projectids = {
                      'OS' : 'AOSP',
                      'kern' : '4.19',
                      'branch' : 'Android-4.19-stable',},
+
+    # projects for android12-5.4
     '5.4-gki-aosp-master-hikey960':
                     {'project_id': 257, 
                      'hardware': 'HiKey960',
                      'OS' : 'AOSP',
                      'kern' : '5.4',
-                     'branch' : 'Android-5.4',},
+                     'branch' : 'Android12-5.4',},
     '5.4-gki-aosp-master-db845c':
                     {'project_id': 261,
                      'hardware': 'db845',
                      'OS' : 'AOSP',
                      'kern' : '5.4',
-                     'branch' : 'Android-5.4',},
+                     'branch' : 'Android12-5.4',},
     '5.4-aosp-master-x15':
                     {'project_id': 339,
                      'hardware': 'x15',
                      'OS' : 'AOSP',
                      'kern' : '5.4',
-                     'branch' : 'Android-5.4',},
+                     'branch' : 'Android12-5.4',},
+
+    # projects for android11-5.4-lts
     '5.4-lts-gki-android11-android11-db845c':
                     {'project_id': 524,
                      'hardware': 'db845',
                      'OS' : 'Android11',
                      'kern' : '5.4',
-                     'branch' : 'Android-5.4',},
+                     'branch' : 'Android11-5.4-lts',},
     '5.4-lts-gki-android11-android11-hikey960':
                     {'project_id': 519,
                      'hardware': 'hikey960',
                      'OS' : 'Android11',
                      'kern' : '5.4',
-                     'branch' : 'Android-5.4',},
+                     'branch' : 'Android11-5.4-lts',},
+    # projects for android11-5.4
     '5.4-gki-android11-android11-db845c':
                     {'project_id': 414,
                      'hardware': 'db845',
                      'OS' : 'Android11',
                      'kern' : '5.4',
-                     'branch' : 'Android-5.4',},
+                     'branch' : 'Android11-5.4',},
     '5.4-gki-android11-android11-hikey960':
                     {'project_id': 409,
                      'hardware': 'hikey960',
                      'OS' : 'Android11',
                      'kern' : '5.4',
-                     'branch' : 'Android-5.4',},
+                     'branch' : 'Android11-5.4',},
+    '5.4-gki-android11-aosp-master-db845c':
+                    {'slug': '5.4-gki-android11-aosp-master-db845c',
+                     'group':'android-lkft',
+                     'hardware': 'db845',
+                     'OS' : 'AOSP',
+                     'kern' : '5.4',
+                     'branch' : 'Android11-5.4',},
+    '5.4-gki-android11-aosp-master-hikey960':
+                    {'slug': '5.4-gki-android11-aosp-master-hikey960',
+                     'group':'android-lkft',
+                     'hardware': 'hikey960',
+                     'OS' : 'AOSP',
+                     'kern' : '5.4',
+                     'branch' : 'Android11-5.4',},
+    # projects for android12-5.10
     '5.10-gki-aosp-master-hikey960':
                     {'project_id': 607,
                      'hardware': 'HiKey960',
@@ -595,6 +654,7 @@ projectids = {
                      'OS' : 'AOSP',
                      'kern' : '5.10',
                      'branch' : 'Android12-5.10',},
+    # projects for android13-5.10
     '5.10-gki-android13-aosp-master-hikey960':
                     {'project_id': 731,
                      'hardware': 'HiKey960',
@@ -618,35 +678,66 @@ projectids = {
                      'hardware': 'HiKey960',
                      'OS' : 'Android12',
                      'kern' : '5.10',
-                     'branch' : 'Android-5.10',},
-
+                     'branch' : 'Android12-5.10',},
+    # projects for android12-5.10-lts
     '5.10-lts-gki-android12-private-android12-hikey960':
                     {'slug': '5.10-lts-gki-android12-private-android12-hikey960',
                      'group': 'android-lkft',
                      'hardware': 'HiKey960',
                      'OS' : 'Android12',
                      'kern' : '5.10',
-                     'branch' : 'Android-5.10-lts',},
+                     'branch' : 'Android12-5.10-lts',},
     '5.10-lts-gki-android12-private-android12-db845c':
                     {'slug': '5.10-lts-gki-android12-private-android12-db845c',
                      'group': 'android-lkft',
                      'hardware': 'db845',
                      'OS' : 'Android12',
                      'kern' : '5.10',
-                     'branch' : 'Android-5.10-lts',},
+                     'branch' : 'Android12-5.10-lts',},
+    # projects for android12-5.4
     '5.4-gki-private-android12-db845c':
                     {'project_id': 620,
                      'hardware': 'db845',
                      'OS' : 'Android12',
                      'kern' : '5.4',
-                     'branch' : 'Android-5.4',},
+                     'branch' : 'Android12-5.4',},
     '5.4-gki-private-android12-hikey960':
                     {'project_id': 621,
                      'hardware': 'HiKey960',
                      'OS' : 'Android12',
                      'kern' : '5.4',
-                     'branch' : 'Android-5.4',},
-
+                     'branch' : 'Android12-5.4',},
+    # projects for android12-5.4-lts
+    '5.4-lts-gki-android12-private-android12-hikey960':
+                    {'slug': '5.4-lts-gki-android12-private-android12-hikey960',
+                     'group': 'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'Android12',
+                     'kern' : '5.4',
+                     'branch' : 'Android12-5.4-lts',},
+    '5.4-lts-gki-android12-private-android12-db845c':
+                    {'slug': '5.4-lts-gki-android12-private-android12-db845c',
+                     'group': 'android-lkft',
+                     'hardware': 'db845',
+                     'OS' : 'Android12',
+                     'kern' : '5.4',
+                     'branch' : 'Android12-5.4-lts',},
+    # projects for android11-5.4
+    '5.4-gki-android11-private-android12-hikey960':
+                    {'slug': '5.4-gki-android11-private-android12-hikey960',
+                     'group': 'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'Android12',
+                     'kern' : '5.4',
+                     'branch' : 'Android11-5.4',},
+    '5.4-gki-android11-private-android12-db845c':
+                    {'slug': '5.4-gki-android11-private-android12-db845c',
+                     'group': 'android-lkft',
+                     'hardware': 'db845',
+                     'OS' : 'Android12',
+                     'kern' : '5.4',
+                     'branch' : 'Android11-5.4',},
+    # projects for android-mainline
     'mainline-gki-aosp-master-db845c':
                     {'project_id': 236,
                      'hardware': 'db845',
@@ -1098,18 +1189,22 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
                 goodruns.append(build)
 
             bailaftertwo += 1
+            logger.info("found one valid build bailaftertwo=%s %s, %s", bailaftertwo, project_name, build.get('version'))
         elif bailaftertwo == 0 and exact_ver1 is not None and baseVersionDict is not None and baseVersionDict.get('versionString') == exact_ver1:
             # found the first build with exact_ver1, but that build does not have all jobs finished successfully
             # stop the loop for builds to find anymore
             bailaftertwo += 1
+            logger.info("The build specified with --exact-version-1 is not a valid build: %s, %s", project_name, build.get('version'))
             return goodruns
         elif bailaftertwo == 1 and exact_ver2 is not None and nextVersionDict is not None and nextVersionDict.get('versionString') == exact_ver2:
             # found the second build with exact_ver2, but that build does not have all jobs finished successfully
             # stop the loop for builds to find anymore
             bailaftertwo += 1
+            logger.info("The build specified with --exact-version-2 is not a valid build: %s, %s", project_name, build.get('version'))
             return goodruns
         else:
             # for case that no completed build found, continute to check the next build
+            logger.info("Not one valid will continue: %s, %s", project_name, build.get('version'))
             continue
 
         #pdb.set_trace()
