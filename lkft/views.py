@@ -554,6 +554,10 @@ def get_classified_jobs(jobs=[]):
         remove the resubmitted jobs and duplicated jobs(needs the jobs to be sorted in job_id descending order)
         as the result for the resubmit(including the duplicated jobs) jobs should be ignored.
     '''
+    # the lava jobs name is defined in the format like this: lkft-android-{{KERNEL_BRANCH}}-{{BUILD_NUMBER}}-cts-lkft
+    # https://git.linaro.org/ci/job/configs.git/tree/lkft/lava-job-definitions/common/template-cts-lkft.yaml#n3
+    # so assuming that there is no "-(\d+)-" pattern in the kernel branch name
+    job_name_pattern = re.compile('^lkft-android-(?P<kernel_branch>\S+?)-(?P<ci_build_number>\d+?)-(?P<job_name_short>\S+)$')
     resubmitted_job_urls = [ job.get('parent_job') for job in jobs if job.get('parent_job')]
     job_names = []
     jobs_to_be_checked = []
@@ -569,6 +573,8 @@ def get_classified_jobs(jobs=[]):
 
     # sorted with the job id in lava server
     # to get the latest jobs to use
+    # here assuming the same job will be resubmitted to the same lava server,
+    # and the job for the old build would not be resubmitted if new build is retriggered
     sorted_jobs = sorted(jobs, key=get_job_external_url, reverse=True)
     for job in sorted_jobs:
         if job.get('url') in resubmitted_job_urls:
@@ -577,13 +583,21 @@ def get_classified_jobs(jobs=[]):
             resubmitted_or_duplicated_jobs.append(job)
             continue
 
-        if job.get('name') in job_names:
+        match = job_name_pattern.match(job.get('name'))
+        if match:
+            # kernel_branch= match.group('kernel_branch')
+            # ci_build_number = match.group('ci_build_number')
+            job_name_short= match.group('job_name_short')
+        else:
+            job_name_short = job.get('name')
+
+        if job_name_short in job_names:
             job['duplicated'] = True
             resubmitted_or_duplicated_jobs.append(job)
             continue
 
         jobs_to_be_checked.append(job)
-        job_names.append(job.get('name'))
+        job_names.append(job_name_short)
 
     return {
         'final_jobs': jobs_to_be_checked,
