@@ -1194,6 +1194,8 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
             # found the first build with exact_ver1, but that build does not have all jobs finished successfully
             # stop the loop for builds to find anymore
             bailaftertwo += 1
+
+            goodruns.append(build)
             logger.info("The build specified with --exact-version-1 is not a valid build: %s, %s", project_name, build.get('version'))
             return goodruns
         elif bailaftertwo == 1 and exact_ver2 is not None and nextVersionDict is not None and nextVersionDict.get('versionString') == exact_ver2:
@@ -1341,8 +1343,6 @@ def add_unique_kernel(unique_kernels, kernel_version, combo, unique_kernel_info)
 
 
 def report_results(output, run, regressions, combo, priorrun, flakes, antiregressions):
-    jobs = run['jobs']
-    job = jobs[0]
     #pdb.set_trace()
     numbers = run['numbers']
     project_info = projectids[combo]
@@ -1486,7 +1486,18 @@ class Command(BaseCommand):
                                           no_check_kernel_version=no_check_kernel_version)
             if len(goodruns) < 2 :
                 print("\nERROR project " + project_name+ " did not have 2 good runs\n")
-                output.write("\nERROR project " + project_name+ " did not have 2 good runs\n\n")
+                if len(goodruns) == 1:
+                    run = goodruns[0]
+                    output.write("ERROR project " + project_name+ " did not have 2 good runs\n")
+                    output.write(project_info['branch'] + "\n")
+                    output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - " + "Current:" + run['version'] + "\n")
+                    output.write("    Current jobs\n")
+
+                    for job in run['jobs']:
+                        output.write("        " + "%s %s %s\n" % (job.get('external_url'), job.get('name'), job.get("job_status")))
+                        if job.get('failure') and job.get('failure').get('error_msg'):
+                            output.write("            " + "%s\n" % (job.get('failure').get('error_msg')))
+                output.write("\n")
             else:
                 add_unique_kernel(unique_kernels, goodruns[1]['version'], combo, unique_kernel_info)
                 regressions = find_regressions(goodruns)
