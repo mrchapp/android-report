@@ -80,12 +80,6 @@ rawkernels = {
             '4.19q-10.0-gsi-hikey-tuxsuite',
             '4.19q-10.0-gsi-hikey960-tuxsuite',
             ],
-    'android-mainline': [
-            'android-mainlin-db845c-gitlab',
-            'android-mainlin-hikey960-gitlab',
-            'android-mainlin-x15-gitlab',
-            'android-mainlin-hikey-gitlab',
-            ],
     ########## for normal jenkins ci builds ##########
     '4.4':[
             '4.4p-10.0-gsi-hikey',
@@ -159,7 +153,7 @@ rawkernels = {
             '5.4-gki-android11-private-android12-db845c', # android11-5.4
             '5.4-gki-android11-private-android12-hikey960', # android11-5.4
             ],
-    'mainline':[
+    'android-mainline':[
             'mainline-gki-aosp-master-db845c',
             'mainline-gki-aosp-master-hikey960',
             'mainline-gki-aosp-master-hikey',
@@ -348,36 +342,6 @@ projectids = {
                                 'OS' : 'Android10',
                                 'kern' : '4.19',
                                 'branch' : 'Android-4.19-q',},
-
-    ## for mainline
-    'android-mainlin-x15-gitlab': {
-                                'slug': 'mainline-aosp-master-x15',
-                                'group':'~yongqin.liu',
-                                'hardware': 'X15',
-                                'OS' : 'AOSP',
-                                'kern' : '5.X',
-                                'branch' : 'android-mainline',},
-    'android-mainlin-hikey-gitlab': {
-                                'slug': 'mainline-gki-aosp-master-hikey',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
-                                'OS' : 'AOSP',
-                                'kern' : '5.X',
-                                'branch' : 'android-mainline',},
-    'android-mainlin-hikey960-gitlab': {
-                                'slug': 'mainline-gki-aosp-master-hikey960',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey960',
-                                'OS' : 'AOSP',
-                                'kern' : '5.X',
-                                'branch' : 'android-mainline',},
-    'android-mainlin-db845c-gitlab': {
-                                'slug': 'mainline-gki-aosp-master-db845c',
-                                'group':'~yongqin.liu',
-                                'hardware': 'db845',
-                                'OS' : 'AOSP',
-                                'kern' : '5.X',
-                                'branch' : 'android-mainline',},
 
     ########## for jenkins ci builds ###################
     '4.4o-8.1-hikey':
