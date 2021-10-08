@@ -896,7 +896,7 @@ def tallyNumbers(build, jobTransactionStatus):
         buildNumbers['modules_done'] += jobTransactionStatus['vts-job']['numbers'].modules_done
         buildNumbers['modules_total'] += jobTransactionStatus['vts-job']['numbers'].modules_total
     else:
-        if 'numbers' in jobTransactionStatus['vts-v7-job']:
+        if jobTransactionStatus['vts-v7-job'] is not None and 'numbers' in jobTransactionStatus['vts-v7-job']:
             buildNumbers['failed_number'] += jobTransactionStatus['vts-v7-job']['numbers'].number_failed
             buildNumbers['passed_number'] += jobTransactionStatus['vts-v7-job']['numbers'].number_passed
             buildNumbers['ignored_number'] += jobTransactionStatus['vts-v7-job']['numbers'].number_ignored
@@ -904,6 +904,7 @@ def tallyNumbers(build, jobTransactionStatus):
             buildNumbers['total_number'] += jobTransactionStatus['vts-v7-job']['numbers'].number_total
             buildNumbers['modules_done'] += jobTransactionStatus['vts-v7-job']['numbers'].modules_done
             buildNumbers['modules_total'] += jobTransactionStatus['vts-v7-job']['numbers'].modules_total
+
         if jobTransactionStatus['vts-v8-job'] is not None:
             if 'numbers' in jobTransactionStatus['vts-v8-job']:
                 buildNumbers['failed_number'] += jobTransactionStatus['vts-v8-job']['numbers'].number_failed
@@ -914,7 +915,7 @@ def tallyNumbers(build, jobTransactionStatus):
                 buildNumbers['modules_done'] += jobTransactionStatus['vts-v8-job']['numbers'].modules_done
                 buildNumbers['modules_total'] += jobTransactionStatus['vts-v8-job']['numbers'].modules_total
 
-    if 'numbers' in jobTransactionStatus['cts-job']:
+    if jobTransactionStatus['cts-job'] is not None and 'numbers' in jobTransactionStatus['cts-job']:
         buildNumbers['failed_number'] += jobTransactionStatus['cts-job']['numbers'].number_failed
         buildNumbers['passed_number'] += jobTransactionStatus['cts-job']['numbers'].number_passed
         buildNumbers['ignored_number'] += jobTransactionStatus['cts-job']['numbers'].number_ignored
@@ -1450,9 +1451,9 @@ class Command(BaseCommand):
                                           no_check_kernel_version=no_check_kernel_version)
             if len(goodruns) < 2 :
                 print("\nERROR project " + project_name+ " did not have 2 good runs\n")
+                output.write("ERROR project " + project_name+ " did not have 2 good runs\n")
                 if len(goodruns) == 1:
                     run = goodruns[0]
-                    output.write("ERROR project " + project_name+ " did not have 2 good runs\n")
                     output.write(project_info['branch'] + "\n")
                     output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - " + "Current:" + run['version'] + "\n")
                     output.write("    Current jobs\n")
@@ -1461,6 +1462,14 @@ class Command(BaseCommand):
                         output.write("        " + "%s %s %s\n" % (job.get('external_url'), job.get('name'), job.get("job_status")))
                         if job.get('failure') and job.get('failure').get('error_msg'):
                             output.write("            " + "%s\n" % (job.get('failure').get('error_msg')))
+                    output.write("    Want to resubmit the failed jobs for a try: https://android.linaro.org/lkft/jobs/?build_id=%s&fetch_latest=true\n" %  run.get('id'))
+                elif len(goodruns) == 0 and opt_exact_ver1 is not None:
+                    output.write(project_info['branch'] + "\n")
+                    output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - build for kernel version " + opt_exact_ver1 + " was not found or still in progress!"+ "\n")
+                    output.write("    Builds list: https://android.linaro.org/lkft/builds/?project_id=%s&fetch_latest=true\n" %  project_id)
+                elif len(goodruns) == 0:
+                    output.write(project_info['branch'] + "\n")
+                    output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - no build available!" + "\n")
                 output.write("\n")
             else:
                 add_unique_kernel(unique_kernels, goodruns[1]['version'], combo, unique_kernel_info)

@@ -2,6 +2,7 @@
 
 dir_parent=$(cd $(dirname $0); pwd)
 f_name="${0}"
+f_basename=$(basename "${0}")
 
 ker_version=""
 no_check_ker_ver=false
@@ -99,6 +100,10 @@ wget -c https://raw.githubusercontent.com/tom-gall/android-qa-classifier-data/ma
 ${dir_parent}/../workspace-python3/bin/python ${dir_parent}/manage.py kernelreport ${opt_no_check_ker_ver} "${ker_version}" ${f_report} /tmp/flakey.txt ${opt_exact_ver1} ${opt_exact_ver2} ${opt_reverse_build_order}
 if [ -f "${f_report}.scribble" ]; then
     cat "${f_report}.scribble" >> "${f_report}"
+    echo "############ Reports End #########################" >> "${f_report}"
+    echo "## Command to reproduce this report ##############" >> "${f_report}"
+    echo "##   ./${f_basename} $@" >> "${f_report}"
+    echo "##################################################" >> "${f_report}"
     echo "Please check the file of ${f_report} for report"
     rm -f "${f_report}.scribble"
 else
