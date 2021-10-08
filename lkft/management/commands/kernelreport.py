@@ -1450,9 +1450,9 @@ class Command(BaseCommand):
                                           no_check_kernel_version=no_check_kernel_version)
             if len(goodruns) < 2 :
                 print("\nERROR project " + project_name+ " did not have 2 good runs\n")
+                output.write("ERROR project " + project_name+ " did not have 2 good runs\n")
                 if len(goodruns) == 1:
                     run = goodruns[0]
-                    output.write("ERROR project " + project_name+ " did not have 2 good runs\n")
                     output.write(project_info['branch'] + "\n")
                     output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - " + "Current:" + run['version'] + "\n")
                     output.write("    Current jobs\n")
@@ -1461,6 +1461,12 @@ class Command(BaseCommand):
                         output.write("        " + "%s %s %s\n" % (job.get('external_url'), job.get('name'), job.get("job_status")))
                         if job.get('failure') and job.get('failure').get('error_msg'):
                             output.write("            " + "%s\n" % (job.get('failure').get('error_msg')))
+                elif len(goodruns) == 0 and opt_exact_ver1 is not None:
+                    output.write(project_info['branch'] + "\n")
+                    output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - build for kernel version " + opt_exact_ver1 + " was not found!"+ "\n")
+                elif len(goodruns) == 0:
+                    output.write(project_info['branch'] + "\n")
+                    output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - no build available!" + "\n")
                 output.write("\n")
             else:
                 add_unique_kernel(unique_kernels, goodruns[1]['version'], combo, unique_kernel_info)
