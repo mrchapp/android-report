@@ -1461,9 +1461,11 @@ class Command(BaseCommand):
                         output.write("        " + "%s %s %s\n" % (job.get('external_url'), job.get('name'), job.get("job_status")))
                         if job.get('failure') and job.get('failure').get('error_msg'):
                             output.write("            " + "%s\n" % (job.get('failure').get('error_msg')))
+                    output.write("    Want to resubmit the failed jobs for a try: https://android.linaro.org/lkft/jobs/?build_id=%s&fetch_latest=true\n" %  run.get('id'))
                 elif len(goodruns) == 0 and opt_exact_ver1 is not None:
                     output.write(project_info['branch'] + "\n")
-                    output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - build for kernel version " + opt_exact_ver1 + " was not found!"+ "\n")
+                    output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - build for kernel version " + opt_exact_ver1 + " was not found or still in progress!"+ "\n")
+                    output.write("    Builds list: https://android.linaro.org/lkft/builds/?project_id=%s&fetch_latest=true\n" %  project_id)
                 elif len(goodruns) == 0:
                     output.write(project_info['branch'] + "\n")
                     output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - no build available!" + "\n")
