@@ -896,7 +896,7 @@ def tallyNumbers(build, jobTransactionStatus):
         buildNumbers['modules_done'] += jobTransactionStatus['vts-job']['numbers'].modules_done
         buildNumbers['modules_total'] += jobTransactionStatus['vts-job']['numbers'].modules_total
     else:
-        if 'numbers' in jobTransactionStatus['vts-v7-job']:
+        if jobTransactionStatus['vts-v7-job'] is not None and 'numbers' in jobTransactionStatus['vts-v7-job']:
             buildNumbers['failed_number'] += jobTransactionStatus['vts-v7-job']['numbers'].number_failed
             buildNumbers['passed_number'] += jobTransactionStatus['vts-v7-job']['numbers'].number_passed
             buildNumbers['ignored_number'] += jobTransactionStatus['vts-v7-job']['numbers'].number_ignored
@@ -904,6 +904,7 @@ def tallyNumbers(build, jobTransactionStatus):
             buildNumbers['total_number'] += jobTransactionStatus['vts-v7-job']['numbers'].number_total
             buildNumbers['modules_done'] += jobTransactionStatus['vts-v7-job']['numbers'].modules_done
             buildNumbers['modules_total'] += jobTransactionStatus['vts-v7-job']['numbers'].modules_total
+
         if jobTransactionStatus['vts-v8-job'] is not None:
             if 'numbers' in jobTransactionStatus['vts-v8-job']:
                 buildNumbers['failed_number'] += jobTransactionStatus['vts-v8-job']['numbers'].number_failed
@@ -914,7 +915,7 @@ def tallyNumbers(build, jobTransactionStatus):
                 buildNumbers['modules_done'] += jobTransactionStatus['vts-v8-job']['numbers'].modules_done
                 buildNumbers['modules_total'] += jobTransactionStatus['vts-v8-job']['numbers'].modules_total
 
-    if 'numbers' in jobTransactionStatus['cts-job']:
+    if jobTransactionStatus['cts-job'] is not None and 'numbers' in jobTransactionStatus['cts-job']:
         buildNumbers['failed_number'] += jobTransactionStatus['cts-job']['numbers'].number_failed
         buildNumbers['passed_number'] += jobTransactionStatus['cts-job']['numbers'].number_passed
         buildNumbers['ignored_number'] += jobTransactionStatus['cts-job']['numbers'].number_ignored
