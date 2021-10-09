@@ -94,18 +94,22 @@ else
     f_report="/tmp/kernelreport-${ker_version}-${exact_ver1}-${exact_ver2}.txt"
 fi
 rm -f "${f_report}.scribble"
-
+rm -f "${f_report}.errorprojects"
+rm -f "${f_report}.successprojects"
 
 wget -c https://raw.githubusercontent.com/tom-gall/android-qa-classifier-data/master/flakey.txt -O /tmp/flakey.txt
 ${dir_parent}/../workspace-python3/bin/python ${dir_parent}/manage.py kernelreport ${opt_no_check_ker_ver} "${ker_version}" ${f_report} /tmp/flakey.txt ${opt_exact_ver1} ${opt_exact_ver2} ${opt_reverse_build_order}
 if [ -f "${f_report}.scribble" ]; then
+    mv -f "${f_report}" "${f_report}.successprojects"
+    cat "${f_report}.errorprojects" >> "${f_report}"
+    cat "${f_report}.successprojects" >> "${f_report}"
     cat "${f_report}.scribble" >> "${f_report}"
-    echo "############ Reports End #########################" >> "${f_report}"
-    echo "## Command to reproduce this report ##############" >> "${f_report}"
-    echo "##   ./${f_basename} $@" >> "${f_report}"
-    echo "##################################################" >> "${f_report}"
+    echo "############ Reports End #########################"
+    echo "## Command to reproduce this report ##############"
+    echo "##   ./${f_basename} $@"
+    echo "##################################################"
     echo "Please check the file of ${f_report} for report"
-    rm -f "${f_report}.scribble"
+    rm -f "${f_report}.scribble" "${f_report}.errorprojects" "${f_report}.successprojects"
 else
     echo "Failed to generate the test report, Please check and try again"
 fi

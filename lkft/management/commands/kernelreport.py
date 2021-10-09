@@ -1060,10 +1060,10 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
         #build_status = get_lkft_build_status(build, jobs)
         jobs=jobs_to_be_checked
         if build_status['has_unsubmitted']:
-            #print "has unsubmitted"
+            logger.info('Skip the check as the build has unsubmitted jobs: %s %s', project_name, build['version'])
             continue
         elif build_status['is_inprogress']:
-            #print "in progress"
+            logger.info('Skip the check as the build is still inprogress: %s %s', project_name, build['version'])
             continue
            
         build['numbers'] = {
@@ -1410,6 +1410,7 @@ class Command(BaseCommand):
         kernel = options['kernel']
         path_outputfile = options['outputfile']
         scribblefile = path_outputfile + str(".scribble")
+        f_errorprojects = path_outputfile + str(".errorprojects")
         path_flakefile = options['flake']
 
         no_check_kernel_version = options.get('no_check_kernel_version')
@@ -1431,6 +1432,7 @@ class Command(BaseCommand):
         flakes = process_flakey_file(path_flakefile)
 
         output = open(scribblefile, "w")
+        output_errorprojects = open(f_errorprojects, "w")
         do_boilerplate(output)
 
         for combo in work:
@@ -1449,7 +1451,7 @@ class Command(BaseCommand):
 
             if project is None:
                 print("\nERROR project for " + combo + " was not found, please check and try again\n")
-                output.write("\nERROR project for " + combo+ " was not found, please check and try again\n\n")
+                output_errorprojects.write("\nERROR project for " + combo+ " was not found, please check and try again\n\n")
                 continue
 
             project_id = project.get('id')
@@ -1461,26 +1463,33 @@ class Command(BaseCommand):
                                           no_check_kernel_version=no_check_kernel_version)
             if len(goodruns) < 2 :
                 print("\nERROR project " + project_name+ " did not have 2 good runs\n")
-                output.write("ERROR project " + project_name+ " did not have 2 good runs\n")
+                if opt_exact_ver1 is not None:
+                    output_errorprojects.write("NOTE: project " + project_name + " did not have results for %s\n" % (opt_exact_ver1))
+                else:
+                    output_errorprojects.write("NOTE: project " + project_name + " did not have results for %s\n" % (kernel))
                 if len(goodruns) == 1:
+                    # assuming that it's the latest build a invalid build
+                    # and that caused only one goodruns returned.
+                    # if the first latest build is a valid build,
+                    # then the second build should be alwasy there
                     run = goodruns[0]
-                    output.write(project_info['branch'] + "\n")
-                    output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - " + "Current:" + run['version'] + "\n")
-                    output.write("    Current jobs\n")
+                    output_errorprojects.write(project_info['branch'] + "\n")
+                    output_errorprojects.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - " + "Current:" + run['version'] + "\n")
+                    output_errorprojects.write("    Current jobs\n")
 
                     for job in run['jobs']:
-                        output.write("        " + "%s %s %s\n" % (job.get('external_url'), job.get('name'), job.get("job_status")))
+                        output_errorprojects.write("        " + "%s %s %s\n" % (job.get('external_url'), job.get('name'), job.get("job_status")))
                         if job.get('failure') and job.get('failure').get('error_msg'):
-                            output.write("            " + "%s\n" % (job.get('failure').get('error_msg')))
-                    output.write("    Want to resubmit the failed jobs for a try: https://android.linaro.org/lkft/jobs/?build_id=%s&fetch_latest=true\n" %  run.get('id'))
+                            output_errorprojects.write("            " + "%s\n" % (job.get('failure').get('error_msg')))
+                    output_errorprojects.write("    Want to resubmit the failed jobs for a try? https://android.linaro.org/lkft/jobs/?build_id=%s&fetch_latest=true\n" %  run.get('id'))
                 elif len(goodruns) == 0 and opt_exact_ver1 is not None:
-                    output.write(project_info['branch'] + "\n")
-                    output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - build for kernel version " + opt_exact_ver1 + " was not found or still in progress!"+ "\n")
-                    output.write("    Builds list: https://android.linaro.org/lkft/builds/?project_id=%s&fetch_latest=true\n" %  project_id)
+                    output_errorprojects.write(project_info['branch'] + "\n")
+                    output_errorprojects.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - build for kernel version " + opt_exact_ver1 + " is not found or still in progress!"+ "\n")
+                    output_errorprojects.write("    Builds list: https://android.linaro.org/lkft/builds/?project_id=%s&fetch_latest=true\n" %  project_id)
                 elif len(goodruns) == 0:
-                    output.write(project_info['branch'] + "\n")
-                    output.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - no build available!" + "\n")
-                output.write("\n")
+                    output_errorprojects.write(project_info['branch'] + "\n")
+                    output_errorprojects.write("    " + project_info['OS'] + "/" + project_info['hardware'] + " - no build available for " + kernel + "!\n")
+                output_errorprojects.write("\n")
             else:
                 add_unique_kernel(unique_kernels, goodruns[1]['version'], combo, unique_kernel_info)
                 regressions = find_regressions(goodruns)
@@ -1489,6 +1498,7 @@ class Command(BaseCommand):
 
         report_kernels_in_report(path_outputfile, unique_kernels, unique_kernel_info)
         output.close()
+        output_errorprojects.close()
         
         bashCommand = "cat "+ str(scribblefile) +str(" >> ") + path_outputfile
         print(bashCommand)
