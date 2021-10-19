@@ -40,6 +40,11 @@ qa_report_api = qa_report.QAReportApi(qa_report_def.get('domain'), qa_report_def
 jenkins_api = qa_report.JenkinsApi('ci.linaro.org', None)
 
 rawkernels = {
+    ## For presubmit jobs
+    'android13-510-db845c-presubmit': [
+            '5.10-gki-android13-aosp-master-db845c-presubmit',
+            ],
+
     ## For gitlab pipeline tuxsuite builds
     'android-4.4-o-hikey': [
             '4.4o-8.1-hikey-tuxsuite',
@@ -641,6 +646,13 @@ projectids = {
                      'OS' : 'AOSP',
                      'kern' : '5.10',
                      'branch' : 'Android13-5.10',},
+    '5.10-gki-android13-aosp-master-db845c-presubmit':
+                    {'slug': '5.10-gki-android13-aosp-master-db845c-presubmit',
+                     'group':'android-lkft',
+                     'hardware': 'db845',
+                     'OS' : 'AOSP',
+                     'kern' : '5.10',
+                     'branch' : 'Android13-5.10',},
     '5.10-gki-private-android12-db845c':
                     {'project_id': 617,
                      'hardware': 'db845',
@@ -894,116 +906,6 @@ def versiontoMME(versionString):
     return versionDict
 
 
-def tallyNumbers(build, jobTransactionStatus):
-    buildNumbers = build['numbers']
-    if jobTransactionStatus['vts-job'] is not None and \
-            'numbers' in jobTransactionStatus['vts-job']:
-        buildNumbers['failed_number'] += jobTransactionStatus['vts-job']['numbers'].number_failed
-        buildNumbers['passed_number'] += jobTransactionStatus['vts-job']['numbers'].number_passed
-        buildNumbers['ignored_number'] += jobTransactionStatus['vts-job']['numbers'].number_ignored
-        buildNumbers['assumption_failure'] += jobTransactionStatus['vts-job']['numbers'].number_assumption_failure
-        buildNumbers['total_number'] += jobTransactionStatus['vts-job']['numbers'].number_total
-        buildNumbers['modules_done'] += jobTransactionStatus['vts-job']['numbers'].modules_done
-        buildNumbers['modules_total'] += jobTransactionStatus['vts-job']['numbers'].modules_total
-    else:
-        if jobTransactionStatus['vts-v7-job'] is not None and 'numbers' in jobTransactionStatus['vts-v7-job']:
-            buildNumbers['failed_number'] += jobTransactionStatus['vts-v7-job']['numbers'].number_failed
-            buildNumbers['passed_number'] += jobTransactionStatus['vts-v7-job']['numbers'].number_passed
-            buildNumbers['ignored_number'] += jobTransactionStatus['vts-v7-job']['numbers'].number_ignored
-            buildNumbers['assumption_failure'] += jobTransactionStatus['vts-v7-job']['numbers'].number_assumption_failure
-            buildNumbers['total_number'] += jobTransactionStatus['vts-v7-job']['numbers'].number_total
-            buildNumbers['modules_done'] += jobTransactionStatus['vts-v7-job']['numbers'].modules_done
-            buildNumbers['modules_total'] += jobTransactionStatus['vts-v7-job']['numbers'].modules_total
-
-        if jobTransactionStatus['vts-v8-job'] is not None:
-            if 'numbers' in jobTransactionStatus['vts-v8-job']:
-                buildNumbers['failed_number'] += jobTransactionStatus['vts-v8-job']['numbers'].number_failed
-                buildNumbers['passed_number'] += jobTransactionStatus['vts-v8-job']['numbers'].number_passed
-                buildNumbers['ignored_number'] += jobTransactionStatus['vts-v8-job']['numbers'].number_ignored
-                buildNumbers['assumption_failure'] += jobTransactionStatus['vts-v8-job']['numbers'].number_assumption_failure
-                buildNumbers['total_number'] += jobTransactionStatus['vts-v8-job']['numbers'].number_total
-                buildNumbers['modules_done'] += jobTransactionStatus['vts-v8-job']['numbers'].modules_done
-                buildNumbers['modules_total'] += jobTransactionStatus['vts-v8-job']['numbers'].modules_total
-
-    if jobTransactionStatus['cts-job'] is not None and 'numbers' in jobTransactionStatus['cts-job']:
-        buildNumbers['failed_number'] += jobTransactionStatus['cts-job']['numbers'].number_failed
-        buildNumbers['passed_number'] += jobTransactionStatus['cts-job']['numbers'].number_passed
-        buildNumbers['ignored_number'] += jobTransactionStatus['cts-job']['numbers'].number_ignored
-        buildNumbers['assumption_failure'] += jobTransactionStatus['cts-job']['numbers'].number_assumption_failure
-        buildNumbers['total_number'] += jobTransactionStatus['cts-job']['numbers'].number_total
-        buildNumbers['modules_done'] += jobTransactionStatus['cts-job']['numbers'].modules_done
-        buildNumbers['modules_total'] += jobTransactionStatus['cts-job']['numbers'].modules_total
-
-
-def markjob(job, jobTransactionStatus):
-    vtsSymbol = re.compile('-vts-')
-    vtsv8Symbol = re.compile('-vts-kernel-arm64-v8a')
-    vtsv7Symbol = re.compile('-vts-kernel-armeabi-v7a')
-    bootSymbol = re.compile('boot')
-    ctsSymbol = re.compile('-cts')
-
-    vtsresult = vtsSymbol.search(job['name'])
-    vtsv8result = vtsv8Symbol.search(job['name'])
-    vtsv7result = vtsv7Symbol.search(job['name'])
-    bootresult = bootSymbol.search(job['name'])
-    ctsresult = ctsSymbol.search(job['name'])
-
-    newjobTime = parser.parse(job['created_at'])
-
-    if vtsv8result is not None: 
-       jobTransactionStatus['vts-v8'] = 'true'
-       # take the later of the two results
-       if jobTransactionStatus['vts-v8-job'] is None:
-           jobTransactionStatus['vts-v8-job'] = job
-       else:
-           origjobTime = parser.parse(jobTransactionStatus['vts-v8-job']['created_at'])
-           if newjobTime > origjobTime :
-               jobTransactionStatus['vts-v8-job'] = job
-       if jobTransactionStatus['vts-v7'] == 'true':
-           jobTransactionStatus['vts'] = 'true'
-
-    elif vtsv7result is not None:
-       jobTransactionStatus['vts-v7'] = 'true'
-       # take the later of the two results
-       if jobTransactionStatus['vts-v7-job'] is None:
-           jobTransactionStatus['vts-v7-job'] = job
-       else:
-           origjobTime = parser.parse(jobTransactionStatus['vts-v7-job']['created_at'])
-           if newjobTime > origjobTime :
-               jobTransactionStatus['vts-v7-job'] = job
-       if jobTransactionStatus['vts-v8'] == 'true':
-           jobTransactionStatus['vts'] = 'true'
-
-    elif vtsresult is not None:
-       jobTransactionStatus['vts'] = 'true'
-       # take the later of the two results
-       if jobTransactionStatus['vts-job'] is None:
-           jobTransactionStatus['vts-job'] = job
-       else:
-           origjobTime = parser.parse(jobTransactionStatus['vts-job']['created_at'])
-           if newjobTime > origjobTime :
-               jobTransactionStatus['vts-job'] = job
-
-    elif ctsresult is not None :
-       jobTransactionStatus['cts'] = 'true'
-       # take the later of the two results
-       if jobTransactionStatus['cts-job'] is None:
-           jobTransactionStatus['cts-job'] = job
-       else:
-           origjobTime = parser.parse(jobTransactionStatus['cts-job']['created_at'])
-           if newjobTime > origjobTime :
-               jobTransactionStatus['cts-job'] = job
-    elif bootresult is not None :
-       jobTransactionStatus['boot'] = 'true'
-       # take the later of the two results
-       if jobTransactionStatus['boot-job'] is None:
-           jobTransactionStatus['boot-job'] = job
-       else:
-           origjobTime = parser.parse(jobTransactionStatus['boot-job']['created_at'])
-           if newjobTime > origjobTime :
-               jobTransactionStatus['boot-job'] = job
-
-
 def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2="", reverse_build_order=False, no_check_kernel_version=False):
     goodruns = []
     bailaftertwo = 0
@@ -1066,15 +968,6 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
             logger.info('Skip the check as the build is still inprogress: %s %s', project_name, build['version'])
             continue
            
-        build['numbers'] = {
-                           'passed_number': 0,
-                           'failed_number': 0,
-                           'ignored_number':0,
-                           'assumption_failure':0,
-                           'total_number': 0,
-                           'modules_done': 0,
-                           'modules_total': 0,
-                           }
         build['jobs'] = jobs
         if not jobs:
             continue
@@ -1082,22 +975,10 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
         download_attachments_save_result(jobs=jobs)
             
         failures = {}
-        resubmitted_job_urls = []
        
-        jobisacceptable=1 
-        jobTransactionStatus = {'vts' : 'maybe',
-                                'cts' : 'maybe',
-                                'boot': 'maybe',
-                                'vts-v7' : 'maybe',
-                                'vts-v8' : 'maybe',
-                                'vts-job' : None,
-                                'cts-job' : None,
-                                'boot-job' : None,
-                                'vts-v7-job': None,
-                                'vts-v8-job': None }
-
         #pdb.set_trace()
         total_jobs_finished_number = 0
+        build['numbers'] = qa_report.TestNumbers()
         for job in jobs:
             jobstatus = job['job_status']
             jobfailure = job['failure']
@@ -1105,7 +986,6 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
             job_numbers = job.get('numbers', None)
             if jobstatus == 'Complete' and jobfailure is None and \
                     job_numbers is not None and job_numbers.get('finished_successfully'):
-                markjob(job, jobTransactionStatus)
                 total_jobs_finished_number = total_jobs_finished_number + 1
 
             result_file_path = get_result_file_path(job=job)
@@ -1128,18 +1008,15 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
             test_numbers = qa_report.TestNumbers()
             test_numbers.addWithHash(job['numbers'])
             job['numbers'] = test_numbers
+            build['numbers'].addWithTestNumbers(test_numbers)
 
         # now let's see what we have. Do we have a complete yet?
-        print("vts: "+ jobTransactionStatus['vts'] + " cts: "+jobTransactionStatus['cts'] + " boot: " +jobTransactionStatus['boot'])
         print("Total Finished Jobs Number / Total Jobs Number: %d / %d" % (total_jobs_finished_number, len(jobs)))
 
         # when the finished successfully jobs number is the same as the number of all jobs
         # it means all the jobs are finished successfully, the build is OK to be used for comparisonfin
         if len(jobs) == total_jobs_finished_number:
-            # and jobTransactionStatus['boot'] == 'true' :
             #pdb.set_trace()
-
-            tallyNumbers(build, jobTransactionStatus)
 
             if nextVersionDict is not None:
                 # add for the second build
@@ -1298,11 +1175,13 @@ def print_androidresultheader(output, project_info, run, priorrun):
     else:
         output.write("Current:" + get_last_of_metadata(build_metadata.get('cts_version', 'UNKNOWN')) + " != Prior:" + get_last_of_metadata(prior_build_metadata.get('cts_version', 'UNKNOWN')) + "\n")
 
-    output.write("    " + "VTS Version:" + " - " )
-    if get_last_of_metadata(build_metadata.get('vts_version', 'UNKNOWN')) == get_last_of_metadata(prior_build_metadata.get('vts_version', 'UNKNOWN')):
-        output.write("Current:" + get_last_of_metadata(build_metadata.get('vts_version', 'UNKNOWN')) + " == Prior:" + get_last_of_metadata(prior_build_metadata.get('vts_version', 'UNKNOWN')) + "\n")
-    else:
-        output.write("Current:" + get_last_of_metadata(build_metadata.get('vts_version', 'UNKNOWN')) + " != Prior:" + get_last_of_metadata(prior_build_metadata.get('vts_version', 'UNKNOWN')) + "\n")
+    # there is the case like presubmit jobs that there are not vts is run
+    if build_metadata.get('vts_version', None):
+        output.write("    " + "VTS Version:" + " - " )
+        if get_last_of_metadata(build_metadata.get('vts_version', 'UNKNOWN')) == get_last_of_metadata(prior_build_metadata.get('vts_version', 'UNKNOWN')):
+            output.write("Current:" + get_last_of_metadata(build_metadata.get('vts_version', 'UNKNOWN')) + " == Prior:" + get_last_of_metadata(prior_build_metadata.get('vts_version', 'UNKNOWN')) + "\n")
+        else:
+            output.write("Current:" + get_last_of_metadata(build_metadata.get('vts_version', 'UNKNOWN')) + " != Prior:" + get_last_of_metadata(prior_build_metadata.get('vts_version', 'UNKNOWN')) + "\n")
 
 
 def add_unique_kernel(unique_kernels, kernel_version, combo, unique_kernel_info):
@@ -1326,14 +1205,14 @@ def report_results(output, run, regressions, combo, priorrun, flakes, antiregres
     #pdb.set_trace()
     output.write("    " + str(len(antiregressions)) + " Prior Failures now pass\n")
     output.write("    " + str(len(regressions)) + " Regressions of ")
-    output.write(str(numbers['failed_number']) + " Failures, ")
-    output.write(str(numbers['passed_number']) + " Passed, ")
-    if numbers['ignored_number'] > 0 :
-        output.write(str(numbers['ignored_number']) + " Ignored, ")
-    if numbers['assumption_failure'] > 0 :
-        output.write(str(numbers['assumption_failure']) + " Assumption Failures, ")
-    output.write( str(numbers['total_number']) + " Total\n" )
-    output.write("    " + "Modules Run: " + str(numbers['modules_done']) + " Module Total: "+str(numbers['modules_total'])+"\n")
+    output.write(str(numbers.number_failed) + " Failures, ")
+    output.write(str(numbers.number_passed) + " Passed, ")
+    if numbers.number_ignored > 0 :
+        output.write(str(numbers.number_ignored) + " Ignored, ")
+    if numbers.number_assumption_failure > 0 :
+        output.write(str(numbers.number_assumption_failure) + " Assumption Failures, ")
+    output.write(str(numbers.number_total) + " Total\n" )
+    output.write("    " + "Modules Run: " + str(numbers.modules_done) + " Module Total: " + str(numbers.modules_total) + "\n")
     for regression in regressions:
         # pdb.set_trace()
         if 'baseOS' in project_info: 
