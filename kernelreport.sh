@@ -97,8 +97,13 @@ rm -f "${f_report}.scribble"
 rm -f "${f_report}.errorprojects"
 rm -f "${f_report}.successprojects"
 
+PYTHON="$(command -v python3)"
+if [ -e "${dir_parent}/../workspace-python3/bin/python" ]; then
+    PYTHON="${dir_parent}/../workspace-python3/bin/python"
+fi
+
 wget -c https://raw.githubusercontent.com/tom-gall/android-qa-classifier-data/master/flakey.txt -O /tmp/flakey.txt
-${dir_parent}/../workspace-python3/bin/python ${dir_parent}/manage.py kernelreport ${opt_no_check_ker_ver} "${ker_version}" ${f_report} /tmp/flakey.txt ${opt_exact_ver1} ${opt_exact_ver2} ${opt_reverse_build_order}
+"${PYTHON}" ${dir_parent}/manage.py kernelreport ${opt_no_check_ker_ver} "${ker_version}" ${f_report} /tmp/flakey.txt ${opt_exact_ver1} ${opt_exact_ver2} ${opt_reverse_build_order}
 if [ -f "${f_report}.scribble" ]; then
     mv -f "${f_report}" "${f_report}.successprojects"
     cat "${f_report}.errorprojects" >> "${f_report}"
