@@ -41,6 +41,9 @@ jenkins_api = qa_report.JenkinsApi('ci.linaro.org', None)
 
 rawkernels = {
     ## For presubmit jobs
+    'android11-54-db845c-presubmit': [
+            '5.4-gki-android11-android11-db845c-presubmit',
+            ],
     'android13-510-db845c-presubmit': [
             '5.10-gki-android13-aosp-master-db845c-presubmit',
             ],
@@ -596,6 +599,13 @@ projectids = {
     # projects for android11-5.4
     '5.4-gki-android11-android11-db845c':
                     {'project_id': 414,
+                     'hardware': 'db845',
+                     'OS' : 'Android11',
+                     'kern' : '5.4',
+                     'branch' : 'Android11-5.4',},
+    '5.4-gki-android11-android11-db845c-presubmit':
+                    {'slug': '5.4-gki-android11-android11-db845c-presubmit',
+                     'group':'android-lkft',
                      'hardware': 'db845',
                      'OS' : 'Android11',
                      'kern' : '5.4',
