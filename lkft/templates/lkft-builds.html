@@ -102,7 +102,13 @@
         {% endif %}
     </td>
     {% with build.numbers as numbers %}
-    <td align="right">{{numbers.jobs_finished}}/{{numbers.jobs_total}}</td>
+    <td align="right">
+        {% if numbers.jobs_finished == 0 or numbers.jobs_finished != numbers.jobs_total %}
+            <p style="background-color: red">{{numbers.jobs_finished}}/{{numbers.jobs_total}}</p>
+        {% else %}
+            <p>{{numbers.jobs_finished}}/{{numbers.jobs_total}}</p>
+        {% endif %}
+    </td>
     <td align="right">{{numbers.number_passed}}</td>
     <td align="right">{{numbers.number_failed}}</td>
     <td align="right">{{numbers.number_assumption_failure}}</td>

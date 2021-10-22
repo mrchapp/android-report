@@ -94,7 +94,15 @@
     {% if project.last_build %}
         {% with project.last_build as last_build %}
         {% with last_build.numbers_of_result as numbers_of_result %}
-        <td align="right"><a href="/lkft/jobs/?build_id={{last_build.id}}">{{ numbers_of_result.jobs_finished }} / {{ numbers_of_result.jobs_total }}</a></td>
+        <td align="right">
+            <a href="/lkft/jobs/?build_id={{last_build.id}}">
+                {% if numbers_of_result.jobs_finished == 0 or numbers_of_result.jobs_finished != numbers_of_result.jobs_total %}
+                    <p style="background-color: red"> {{ numbers_of_result.jobs_finished }} / {{ numbers_of_result.jobs_total }} </p>
+                {% else %}
+                    <p> {{ numbers_of_result.jobs_finished }} / {{ numbers_of_result.jobs_total }} </p>
+                {% endif %}
+            </a>
+        </td>
         <td align="right"><a href="/lkft/jobs/?build_id={{last_build.id}}">{{ numbers_of_result.number_passed }}</a></td>
         <td align="right"><a href="/lkft/jobs/?build_id={{last_build.id}}">{{ numbers_of_result.number_failed }}</a></td>
         <td align="right"><a href="/lkft/jobs/?build_id={{last_build.id}}">{{ numbers_of_result.number_assumption_failure }}</a></td>
