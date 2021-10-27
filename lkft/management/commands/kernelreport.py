@@ -47,6 +47,12 @@ rawkernels = {
     'android13-510-db845c-presubmit': [
             '5.10-gki-android13-aosp-master-db845c-presubmit',
             ],
+    'EAP-android12-54-db845c-presubmit': [
+            '5.4-gki-private-android12-db845c-presubmit',
+            ],
+    'EAP-android12-510-db845c-presubmit': [
+            '5.10-gki-private-android12-db845c-presubmit',
+            ],
 
     ## For gitlab pipeline tuxsuite builds
     'android-4.4-o-hikey': [
@@ -669,6 +675,13 @@ projectids = {
                      'OS' : 'Android12',
                      'kern' : '5.10',
                      'branch' : 'Android12-5.10',},
+    '5.10-gki-private-android12-db845c-presubmit':
+                    {'slug': '5.10-gki-private-android12-db845c-presubmit',
+                     'group':'android-lkft',
+                     'hardware': 'db845',
+                     'OS' : 'Android12',
+                     'kern' : '5.10',
+                     'branch' : 'Android12-5.10',},
     '5.10-gki-private-android12-hikey960':
                     {'project_id': 616,
                      'hardware': 'HiKey960',
@@ -693,6 +706,13 @@ projectids = {
     # projects for android12-5.4
     '5.4-gki-private-android12-db845c':
                     {'project_id': 620,
+                     'hardware': 'db845',
+                     'OS' : 'Android12',
+                     'kern' : '5.4',
+                     'branch' : 'Android12-5.4',},
+    '5.4-gki-private-android12-db845c-presubmit':
+                    {'slug': '5.4-gki-private-android12-db845c-presubmit',
+                     'group':'android-lkft',
                      'hardware': 'db845',
                      'OS' : 'Android12',
                      'kern' : '5.4',
