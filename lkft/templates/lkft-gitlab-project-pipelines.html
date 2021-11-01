@@ -1,0 +1,48 @@
+{% extends '_layouts/base.html' %}
+
+{% load static%}
+
+{% block title %} Gitlab pipelines {% endblock %}
+
+{% block headline %}<h1><a href="{{project.web_url}}">Gitlab pipelines</a></h1>{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static "report/css/compatibility_result.css" %}">
+<script src="{% static "report/jquery.min.js" %}"></script>
+<script src="{% static "report/bootstrap.min.js" %}"></script>
+{% endblock %}
+
+{% block content %}
+{% if error_msg %}
+<div class="alert alert-warning" role="alert">
+	<p class="lead">The following errors reported when try to load this page:</p>
+	<p class="lead">&nbsp;&nbsp;&nbsp;&nbsp;<strong>{{error_msg}}</strong></p>
+	<p class="lead">Please check and try again</p>
+</div>
+{% else %}
+<div>
+	<table border="1">
+		<tr>
+			<th>Index</th>
+			<th>Pipeline Id</th>
+			<th>Status</th>
+			<th>Updated At</th>
+			<th>Branch Name#Build Version<br/>(Need login gitlab to download artifacts)</th>
+	</tr>
+	{% for pipeline in pipelines %}
+	<tr>
+	    <td>{{ forloop.counter }}</td>
+	    <td><a href="{{pipeline.web_url}}/">{{pipeline.id}}</a></td>
+	    <td>{{pipeline.status}}</td>
+	    <td>{{ pipeline.updated_at_datetime|date:'M. d, Y, H:i'}}, <br/>{{ pipeline.updated_at_datetime|timesince}} ago</td>
+	    {% if pipeline.artifacts_url %}
+	    <td><a target='_blank' href="{{pipeline.artifacts_url}}">{{pipeline.branch}}#{{pipeline.build_version}}</a></td>
+	    {% else %}
+	    <td>{{pipeline.branch}}#{{pipeline.build_version}}</td>
+	    {% endif %}
+	</tr>
+	{% endfor %}
+	</table>
+</div>
+{% endif %}
+{% endblock %}
