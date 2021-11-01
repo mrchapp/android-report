@@ -21,9 +21,11 @@ class UrlNotFoundException(Exception):
         Specific Expection for UrlNotFound Error
     '''
     response = None
+    url = None
 
-    def __init__(self, response):
+    def __init__(self, response, url=None):
         self.response = response
+        self.url = url
 
 
 class ParameterInvalidException(Exception):
@@ -43,9 +45,10 @@ class RESTFullApi():
         headers = {
                 'Content-Type': 'application/json',
                 }
-        if self.api_token:
+        if self.api_token and len(self.api_token) > 0:
             headers['Authorization'] = 'Token %s' % self.api_token
             headers['Auth-Token'] = self.api_token
+            headers['PRIVATE-TOKEN'] = self.api_token
 
         if method == 'GET':
             r = requests.get(request_url, headers=headers, auth=self.auth)
@@ -57,7 +60,7 @@ class RESTFullApi():
             return r
 
         if not r.ok and r.status_code == 404:
-            raise UrlNotFoundException(r)
+            raise UrlNotFoundException(r, url=request_url)
         elif not r.ok or r.status_code != 200:
             raise Exception(r.url, r.reason, r.status_code)
 
@@ -87,6 +90,47 @@ class RESTFullApi():
         """Return the url prefix, which we could use with the api url directly"""
         """Should never be called."""
         raise NotImplementedError('%s.get_api_url_prefix should never be called directly' % self.__class__.__name__)
+
+
+class GitlabApi(RESTFullApi):
+    def get_api_url_prefix(self, detail_url):
+        url_host="https://gitlab.com/api/v4/projects/"
+        return 'https://%s/api/v4/projects/%s' % (self.domain, detail_url)
+
+    def get_json_with_url(self, full_url):
+        r = self.call_with_full_url(request_url=full_url, returnResponse=True)
+        if not r.ok and r.status_code == 404:
+            raise UrlNotFoundException(r, url=full_url)
+        elif not r.ok or r.status_code != 200:
+            raise Exception(r.url, r.reason, r.status_code)
+
+        return r.json()
+
+    def get_project(self, project_id):
+        project_id = project_id.replace('/', '%2F')
+        full_url = self.get_api_url_prefix(detail_url=project_id)
+        return self.get_json_with_url(full_url)
+
+    def get_project_pipelines(self, project_id, per_page=50):
+        project_id = project_id.replace('/', '%2F')
+        full_url = self.get_api_url_prefix(detail_url="%s/pipelines?per_page=%d" % (project_id, per_page))
+        return self.get_json_with_url(full_url)
+
+    def get_pipeline_variables(self, project_id, pipeline_id):
+        project_id = project_id.replace('/', '%2F')
+        full_url = self.get_api_url_prefix(detail_url="%s/pipelines/%s/variables" % (project_id, pipeline_id))
+        return self.get_json_with_url(full_url)
+
+    def get_pipeline_jobs(self, project_id, pipeline_id):
+        project_id = project_id.replace('/', '%2F')
+        full_url = self.get_api_url_prefix(detail_url="%s/pipelines/%s/jobs" % (project_id, pipeline_id))
+        return self.get_json_with_url(full_url)
+
+    def get_job_artifacts_url(self, project_id, job_id):
+        return self.get_api_url_prefix(detail_url="%s/jobs/%s/artifacts" % (project_id, job_id))
+
+    def get_project_url(self, project_id):
+        return self.get_api_url_prefix(detail_url="%s" % (project_id))
 
 
 class JenkinsApi(RESTFullApi):
@@ -259,7 +303,7 @@ class LAVAApi(RESTFullApi):
         url_result_yaml = "https://%s/results/%s/yaml?user=%s&token=%s" % (self.domain, job_id, self.username, self.api_token)
         r = self.call_with_full_url(request_url=url_result_yaml, returnResponse=True)
         if not r.ok and r.status_code == 404:
-            raise UrlNotFoundException(r)
+            raise UrlNotFoundException(r, url=url_result_yaml)
         elif not r.ok or r.status_code != 200:
             raise Exception(r.url, r.reason, r.status_code)
 

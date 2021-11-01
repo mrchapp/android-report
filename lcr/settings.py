@@ -31,6 +31,7 @@ bind_user = "" ## TO BE UPDATED
 bind_passwd = "" ## TO BE UPDATED
 jenkins_user = None ## TO BE UPDATED
 jenkins_token = "" ## TO BE UPDATED
+gitlab_token = "" ## TO BE UPDATED
 qareport_token = "" ## TO BE UPDATED
 lava_production_user = "" ## TO BE UPDATED
 lava_production_token = "" ## TO BE UPDATED
@@ -85,6 +86,13 @@ JENKINS = {
                 'domain': 'ci.linaro.org',
                 'user': jenkins_user, ## TO BE UPDATED
                 'token': jenkins_token, ## TO BE UPDATED
+                },
+}
+
+GITLAB = {
+    'default': {
+                'domain': 'gitlab.com',
+                'token': gitlab_token, ## TO BE UPDATED
                 },
 }
 
@@ -158,6 +166,7 @@ if ENABLE_APP_REPORT:
 
 QA_REPORT_DEFAULT = 'production'
 JENKINS_DEFAULT = 'default'
+GITLAB_DEFAULT = 'default'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/

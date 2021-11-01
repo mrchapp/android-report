@@ -29,7 +29,7 @@ from django.contrib.auth.models import User, AnonymousUser, Group as auth_group
 from django.utils.timesince import timesince
 
 from lcr.settings import FILES_DIR, LAVA_SERVERS, BUGZILLA_API_KEY, BUILD_WITH_JOBS_NUMBER, BUILD_WITH_BENCHMARK_JOBS_NUMBER, DB_USE_POSTGRES
-from lcr.settings import QA_REPORT, QA_REPORT_DEFAULT, JENKINS, JENKINS_DEFAULT
+from lcr.settings import QA_REPORT, QA_REPORT_DEFAULT, JENKINS, JENKINS_DEFAULT, GITLAB, GITLAB_DEFAULT
 from lcr.settings import RESTRICTED_PROJECTS
 from lcr.irc import IRC
 
@@ -45,8 +45,12 @@ from .models import KernelChange, CiBuild, ReportBuild, ReportProject, ReportJob
 
 qa_report_def = QA_REPORT[QA_REPORT_DEFAULT]
 qa_report_api = qa_report.QAReportApi(qa_report_def.get('domain'), qa_report_def.get('token'))
-jenkins_def = JENKINS[JENKINS_DEFAULT]
+
+jenkins_def = JENKINS[GITLAB_DEFAULT]
 jenkins_api = qa_report.JenkinsApi(jenkins_def.get('domain'), jenkins_def.get('token'), user=jenkins_def.get('user'))
+
+gitlab_def = GITLAB[JENKINS_DEFAULT]
+gitlab_api = qa_report.GitlabApi(gitlab_def.get('domain'), gitlab_def.get('token'))
 irc = IRC.getInstance()
 
 DIR_ATTACHMENTS = os.path.join(FILES_DIR, 'lkft')
@@ -2979,6 +2983,81 @@ def list_projects_simple(request):
     }
 
     return render(request, 'lkft-projects-simple.html', response_data)
+
+
+def gitlab_projects(request):
+
+    gitlab_projects = [
+        {
+            'project_id':'28147432',
+            'path_with_namespace':'Linaro/lkft/users/daniel.diaz/android-reporter',
+            'web_url': 'https://gitlab.com/Linaro/lkft/users/daniel.diaz/android-reporter'
+        },
+        # {
+        #     'project_id':'28784629',
+        #     'path_with_namespace':'Linaro/lkft/users/yongqin.liu/lkft-common',
+        #     'web_url': 'https://gitlab.com/Linaro/lkft/users/yongqin.liu/lkft-common'
+        # },
+        # {
+        #     'project_id':'28894006',
+        #     'path_with_namespace':'Linaro/lkft/users/yongqin.liu/android-common',
+        #     'web_url': 'https://gitlab.com/Linaro/lkft/users/yongqin.liu/android-common'
+        # },
+    ]
+
+    response_data = {
+        'gitlab_projects': gitlab_projects,
+    }
+
+    return render(request, 'lkft-gitlab-projects.html', response_data)
+
+
+def gitlab_project_pipelines(request, project_id):
+    logger.debug("start prepare for gitlab_project_pipelines")
+    try:
+        project = gitlab_api.get_project(project_id)
+        pipelines = gitlab_api.get_project_pipelines(project_id, per_page=30)
+
+        for pipeline in pipelines:
+            logger.debug("start for pipeline %s" % pipeline.get('web_url'))
+            updated_at_datetime = qa_report_api.get_aware_datetime_from_str(pipeline.get('updated_at'))
+            pipeline['updated_at_datetime'] = updated_at_datetime
+
+            variables_dict = {}
+            try:
+                variables = gitlab_api.get_pipeline_variables(project_id, pipeline.get('id'))
+                for variable in variables:
+                    variables_dict[variable.get('key')] = variable.get('value')
+            except Exception as unexpect:
+                logger.warn(unexpect)
+
+            pipeline['branch'] = variables_dict.get('KERNEL_BRANCH', 'Unknown')
+            pipeline['build_version'] = variables_dict.get('KERNEL_SPECIFIC', 'Unknown')
+
+            jobs = gitlab_api.get_pipeline_jobs(project_id, pipeline.get('id'))
+
+            for job in jobs:
+                if job.get('name') == 'report':
+                    pipeline['artifacts_url'] = gitlab_api.get_job_artifacts_url(project_id, job.get('id'))
+                    break
+
+        response_data = {
+            'pipelines': pipelines,
+            'project': project,
+        }
+    except UrlNotFoundException as e:
+        project = {
+            'id': project_id,
+            'web_url': gitlab_api.get_project_url(project_id),
+        }
+        response_data = {
+            'project': project,
+            'pipelines': [],
+            'error_msg': "Failed to access %s" % (e.url),
+        }
+
+    logger.debug("before redirect for gitlab_project_pipelines")
+    return render(request, 'lkft-gitlab-project-pipelines.html', response_data)
 
 ########################################
 ### Register for IRC functions

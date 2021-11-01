@@ -4,6 +4,7 @@ from . import views
 
 basic_pat = '[a-zA-Z0-9][a-zA-Z0-9_.-]+'
 numerical_pat = '[1-9][0-9]+'
+gitlab_project_id_pat = '[a-zA-Z0-9][a-zA-Z0-9_\.\-\%\/]+'
 urlpatterns = [
     url(r'^$', views.list_projects_simple, name='home'),
     url(r'^boottime-projects/.*$', views.list_boottime_projects, name='list_boottime_projects'),
@@ -28,4 +29,7 @@ urlpatterns = [
     url(r'^newchanges/(%s)/(%s)/(%s)/([0-9]+)' % (basic_pat, basic_pat, basic_pat), views.new_kernel_changes),
     # newchanges/$branch/$describe/$build_name/$build_number
     url(r'^newbuild/(%s)/(%s)/(%s)/([0-9]+)' % (basic_pat, basic_pat, basic_pat), views.new_build, name='new_build'),
+
+    url(r'^gitlab/$', views.gitlab_projects, name='gitlab_projects'),
+    url(r'^gitlab/(%s)/$' % gitlab_project_id_pat, views.gitlab_project_pipelines, name='gitlab_progect_pipelines'),
 ]
