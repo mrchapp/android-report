@@ -34,7 +34,7 @@
 	    <td>{{ forloop.counter }}</td>
 	    <td><a href="{{pipeline.web_url}}/">{{pipeline.id}}</a></td>
 	    <td>{{pipeline.status}}</td>
-	    <td>{{ pipeline.updated_at_datetime|date:'M. d, Y, H:i'}}, <br/>{{ pipeline.updated_at_datetime|timesince}} ago</td>
+	    <td>{{ pipeline.updated_at_datetime|date:'M. d, Y, H:i'}}, {{ pipeline.updated_at_datetime|timesince}} ago</td>
 	    {% if pipeline.artifacts_url %}
 	    <td><a target='_blank' href="{{pipeline.artifacts_url}}">{{pipeline.branch}}#{{pipeline.build_version}}</a></td>
 	    {% else %}
