@@ -55,20 +55,9 @@ rawkernels = {
             ],
 
     ## For gitlab pipeline tuxsuite builds
-    'android-4.4-o-hikey': [
-            '4.4o-8.1-hikey-tuxsuite',
-            '4.4o-9.0-lcr-hikey-tuxsuite',
-            '4.4o-10.0-gsi-hikey-tuxsuite',
-            ],
     'android-4.4-p-hikey': [
             '4.4p-9.0-hikey-tuxsuite',
             '4.4p-10.0-gsi-hikey-tuxsuite',
-            ],
-    'android-4.9-o-hikey': [
-            '4.9o-8.1-hikey-tuxsuite',
-            '4.9o-9.0-lcr-hikey-tuxsuite',
-            '4.9o-10.0-gsi-hikey-tuxsuite',
-            '4.9o-10.0-gsi-hikey960-tuxsuite',
             ],
     'android-4.9-p-hikey': [
             "4.9p-9.0-hikey-tuxsuite",
@@ -98,21 +87,14 @@ rawkernels = {
     '4.4':[
             '4.4p-10.0-gsi-hikey',
             '4.4p-9.0-hikey',
-            '4.4o-10.0-gsi-hikey',
-            '4.4o-9.0-lcr-hikey',
-            '4.4o-8.1-hikey',
             ],
     '4.9':[
             '4.9q-10.0-gsi-hikey960',
             '4.9q-10.0-gsi-hikey',
             '4.9p-10.0-gsi-hikey960',
             '4.9p-10.0-gsi-hikey',
-            '4.9o-10.0-gsi-hikey960',
             '4.9p-9.0-hikey960',
             '4.9p-9.0-hikey',
-            '4.9o-10.0-gsi-hikey',
-            '4.9o-9.0-lcr-hikey',
-            '4.9o-8.1-hikey', 
             ],
     '4.14':[
             '4.14-stable-master-hikey960-lkft',
@@ -188,30 +170,6 @@ rawkernels = {
 projectids = {
     # for gitlab pipeline tuxsuite builds ###########
 
-    ## for 4.4o
-    '4.4o-8.1-hikey-tuxsuite': {
-                                'slug': '4.4o-8.1-hikey',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
-                                'OS' : 'LCR-Android8',
-                                'baseOS' : 'Android8',
-                                'kern' : '4.4',
-                                'branch' : 'Android-4.4-o',},
-    '4.4o-9.0-lcr-hikey-tuxsuite': {
-                                'slug': '4.4o-9.0-lcr-hikey',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
-                                'OS' : 'LCR-Android9',
-                                'baseOS' : 'Android9',
-                                'kern' : '4.4',
-                                'branch' : 'Android-4.4-o',},
-    '4.4o-10.0-gsi-hikey-tuxsuite': {
-                                'slug': '4.4o-10.0-gsi-hikey',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
-                                'OS' : 'Android10',
-                                'kern' : '4.4',
-                                'branch' : 'Android-4.4-o',},
     ## for 4.4p
     '4.4p-9.0-hikey-tuxsuite': {
                                 'slug': '4.4p-9.0-hikey',
@@ -228,36 +186,6 @@ projectids = {
                                 'OS' : 'Android10',
                                 'kern' : '4.4',
                                 'branch' : 'Android-4.4-p',},
-
-    ## for 4.9o
-    '4.9o-8.1-hikey-tuxsuite': {
-                        'slug': '4.9o-8.1-hikey',
-                        'group':'~yongqin.liu',
-                        'hardware': 'HiKey',
-                        'OS' : 'Android10',
-                        'kern' : '4.9',
-                        'branch' : 'Android-4.9-o',},
-    '4.9o-9.0-lcr-hikey-tuxsuite': {
-                        'slug': '4.9o-9.0-lcr-hikey',
-                        'group':'~yongqin.liu',
-                        'hardware': 'HiKey',
-                        'OS' : 'Android10',
-                        'kern' : '4.9',
-                        'branch' : 'Android-4.9-o',},
-    '4.9o-10.0-gsi-hikey-tuxsuite': {
-                        'slug': '4.9o-10.0-gsi-hikey',
-                        'group':'~yongqin.liu',
-                        'hardware': 'HiKey',
-                        'OS' : 'Android10',
-                        'kern' : '4.9',
-                        'branch' : 'Android-4.9-o',},
-    '4.9o-10.0-gsi-hikey960-tuxsuite': {
-                        'slug': '4.9o-10.0-gsi-hikey960',
-                        'group':'~yongqin.liu',
-                        'hardware': 'HiKey960',
-                        'OS' : 'Android10',
-                        'kern' : '4.9',
-                        'branch' : 'Android-4.9-o',},
 
     ## for 4.9p
     "4.9p-9.0-hikey-tuxsuite": {
@@ -368,26 +296,6 @@ projectids = {
                                 'branch' : 'Android-4.19-q',},
 
     ########## for jenkins ci builds ###################
-    '4.4o-8.1-hikey':
-                    {'project_id': 86, 
-                     'hardware': 'HiKey',
-                     'OS' : 'LCR-Android8',
-                     'baseOS' : 'Android8',
-                     'kern' : '4.4',
-                     'branch' : 'Android-4.4-o',}, 
-    '4.4o-9.0-lcr-hikey':
-                    {'project_id': 253, 
-                     'hardware': 'HiKey',
-                     'OS' : 'LCR-Android9',
-                     'baseOS' : 'Android9',
-                     'kern' : '4.4',
-                     'branch' : 'Android-4.4-o',},
-    '4.4o-10.0-gsi-hikey':
-                    {'project_id': 254, 
-                     'hardware': 'HiKey',
-                     'OS' : 'Android10',
-                     'kern' : '4.4',
-                     'branch' : 'Android-4.4-o',},
     '4.4p-9.0-hikey':
                     {'project_id': 123, 
                      'hardware': 'HiKey',
@@ -401,32 +309,6 @@ projectids = {
                      'OS' : 'Android10',
                      'kern' : '4.4',
                      'branch' : 'Android-4.4-p',},
-    '4.9o-8.1-hikey':
-                    {'project_id': 87, 
-                     'hardware': 'HiKey',
-                     'OS' : 'LCR-Android8',
-                     'baseOS' : 'Android8',
-                     'kern' : '4.9',
-                     'branch' : 'Android-4.9-o',},
-    '4.9o-9.0-lcr-hikey':
-                    {'project_id': 250, 
-                     'hardware': 'HiKey',
-                     'OS' : 'LCR-Android9',
-                     'baseOS' : 'Android9',
-                     'kern' : '4.9',
-                     'branch' : 'Android-4.9-o',},
-    '4.9o-10.0-gsi-hikey':
-                    {'project_id': 251, 
-                     'hardware': 'HiKey',
-                     'OS' : 'Android10',
-                     'kern' : '4.9',
-                     'branch' : 'Android-4.9-o',},
-    '4.9o-10.0-gsi-hikey960':
-                    {'project_id': 255, 
-                     'hardware': 'HiKey960',
-                     'OS' : 'Android10',
-                     'kern' : '4.9',
-                     'branch' : 'Android-4.9-o',},
     '4.9p-9.0-hikey':
                     {'project_id': 122, 
                      'hardware': 'HiKey',
