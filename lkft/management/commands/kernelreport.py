@@ -140,6 +140,10 @@ rawkernels = {
             '5.10-gki-aosp-master-db845c',
             '5.10-gki-aosp-master-hikey960',
             ],
+    'android13-5.15':[
+            '5.15-gki-android13-aosp-master-db845c',
+            ],
+
     'EAP-android12-5.10-lts':[
             '5.10-lts-gki-android12-private-android12-hikey960',
             '5.10-lts-gki-android12-private-android12-db845c',
@@ -643,6 +647,14 @@ projectids = {
                      'OS' : 'Android12',
                      'kern' : '5.4',
                      'branch' : 'Android11-5.4',},
+    # projects for android13-5.15
+    '5.15-gki-android13-aosp-master-db845c':
+                    {'slug': '5.15-gki-android13-aosp-master-db845c',
+                     'group':'android-lkft',
+                     'hardware': 'db845',
+                     'OS' : 'AOSP',
+                     'kern' : '5.15',
+                     'branch' : 'Android13-5.15',},
     # projects for android-mainline
     'mainline-gki-aosp-master-db845c':
                     {'project_id': 236,
