@@ -100,6 +100,7 @@ rawkernels = {
             '4.14-stable-master-hikey960-lkft',
             '4.14-stable-master-hikey-lkft',
             '4.14-stable-aosp-x15',
+            '4.14-stable-android12-hikey960-lkft',
             '4.14-stable-android11-hikey960-lkft',
             '4.14q-10.0-gsi-hikey960',
             '4.14q-10.0-gsi-hikey',
@@ -408,6 +409,13 @@ projectids = {
                      'group':'android-lkft',
                      'hardware': 'HiKey960',
                      'OS' : 'Android11',
+                     'kern' : '4.14',
+                     'branch': 'Android-4.14-stable',},
+    '4.14-stable-android12-hikey960-lkft':
+                    {'slug': '4.14-stable-android12-hikey960-lkft',
+                     'group':'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'Android12',
                      'kern' : '4.14',
                      'branch': 'Android-4.14-stable',},
 
