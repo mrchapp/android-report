@@ -587,6 +587,8 @@ class TestNumbers():
     number_assumption_failure = 0
     number_ignored = 0
     number_total = 0
+    number_regressions = 0
+    number_antiregressions = 0
     modules_done = 0
     modules_total = 0
     jobs_finished = 0
@@ -599,6 +601,8 @@ class TestNumbers():
         self.number_assumption_failure = self.number_assumption_failure + numbers_of_result.get('number_assumption_failure', 0)
         self.number_ignored = self.number_ignored + numbers_of_result.get('number_ignored', 0)
         self.number_total = self.number_total + numbers_of_result.get('number_total')
+        self.number_regressions = self.number_regressions + numbers_of_result.get('number_regressions', 0)
+        self.number_antiregressions = self.number_antiregressions + numbers_of_result.get('number_antiregressions', 0)
         self.modules_done = self.modules_done + numbers_of_result.get('modules_done')
         self.modules_total = self.modules_total + numbers_of_result.get('modules_total')
         self.jobs_finished = self.jobs_finished + numbers_of_result.get('jobs_finished', 0)
@@ -614,6 +618,8 @@ class TestNumbers():
             'number_assumption_failure': self.number_assumption_failure,
             'number_ignored': self.number_ignored,
             'number_total': self.number_total,
+            'number_regressions': self.number_regressions,
+            'number_antiregressions': self.number_antiregressions,
             'modules_done': self.modules_done,
             'modules_total': self.modules_total,
             'jobs_finished': self.jobs_finished,
@@ -627,6 +633,8 @@ class TestNumbers():
         self.number_assumption_failure = self.number_assumption_failure + testNumbers.number_assumption_failure
         self.number_ignored = self.number_ignored + testNumbers.number_ignored
         self.number_total = self.number_total + testNumbers.number_total
+        self.number_regressions = self.number_regressions + testNumbers.number_regressions
+        self.number_antiregressions = self.number_antiregressions + testNumbers.number_antiregressions
         self.modules_done = self.modules_done + testNumbers.modules_done
         self.modules_total = self.modules_total + testNumbers.modules_total
         self.jobs_finished = self.jobs_finished + testNumbers.jobs_finished
@@ -648,6 +656,11 @@ class TestNumbers():
         if hasattr(db_record, 'jobs_total'):
             self.jobs_total = self.jobs_total + testNumbers.jobs_total
 
+        if hasattr(db_record, 'number_regressions'):
+            self.number_regressions = self.number_regressions + db_record.number_regressions
+        if hasattr(db_record, 'number_antiregressions'):
+            self.number_antiregressions = self.number_antiregressions + testNumbers.number_antiregressions
+
         return self
 
 
@@ -665,6 +678,10 @@ class TestNumbers():
         if hasattr(db_record, 'jobs_total'):
             db_record.jobs_total = self.jobs_total
 
+        if hasattr(db_record, 'number_regressions'):
+            db_record.number_regressions = self.number_regressions
+        if hasattr(db_record, 'number_antiregressions'):
+            db_record.number_antiregressions = self.number_antiregressions
         return db_record
 
 
@@ -681,5 +698,10 @@ class TestNumbers():
             db_record.jobs_finished = numbers_of_result.get('jobs_finished', 0)
         if hasattr(db_record, 'jobs_total'):
             db_record.jobs_total = numbers_of_result.get('jobs_total', 0)
+
+        if hasattr(db_record, 'number_regressions'):
+            db_record.number_regressions = numbers_of_result.get('number_regressions', 0)
+        if hasattr(db_record, 'number_antiregressions'):
+            db_record.number_antiregressions = numbers_of_result.get('number_antiregressions', 0)
 
         return db_record

@@ -1167,7 +1167,7 @@ def report_results(output, run, regressions, combo, priorrun, flakes, antiregres
     output.write("\n")
 
 
-def report_kernels_in_report(path_outputfile, unique_kernels, unique_kernel_info):
+def report_kernels_in_report(path_outputfile, unique_kernels, unique_kernel_info, work_total_numbers):
     with open(path_outputfile, "w") as f_outputfile:
         f_outputfile.write("\n")
         f_outputfile.write("\n")
@@ -1182,6 +1182,16 @@ def report_kernels_in_report(path_outputfile, unique_kernels, unique_kernel_info
             for combo in intercombo:
                 f_outputfile.write(", "+ combo)
             f_outputfile.write("\n")
+
+        f_outputfile.write("\n")
+        f_outputfile.write("    %d Prior Failures now pass\n" % work_total_numbers.number_antiregressions)
+        f_outputfile.write("    %d Regressions of %d Failures, %d Passed, %d Ignored, %d Assumption Failures, %d Total\n" % (
+                                work_total_numbers.number_regressions,
+                                work_total_numbers.number_failed,
+                                work_total_numbers.number_passed,
+                                work_total_numbers.number_ignored,
+                                work_total_numbers.number_assumption_failure,
+                                work_total_numbers.number_total))
 
 
 class Command(BaseCommand):
@@ -1246,6 +1256,8 @@ class Command(BaseCommand):
         output_errorprojects = open(f_errorprojects, "w")
         do_boilerplate(output)
 
+
+        work_total_numbers = qa_report.TestNumbers()
         for combo in work:
             project_info = projectids[combo]
             project_id = project_info.get('project_id', None)
@@ -1305,9 +1317,12 @@ class Command(BaseCommand):
                 add_unique_kernel(unique_kernels, goodruns[1]['version'], combo, unique_kernel_info)
                 regressions = find_regressions(goodruns)
                 antiregressions = find_antiregressions(goodruns)
+                goodruns[1].get('numbers').number_regressions = len(regressions)
+                goodruns[1].get('numbers').number_antiregressions = len(antiregressions)
+                work_total_numbers.addWithTestNumbers(goodruns[1].get('numbers'))
                 report_results(output, goodruns[1], regressions, combo, goodruns[0], flakes, antiregressions)
 
-        report_kernels_in_report(path_outputfile, unique_kernels, unique_kernel_info)
+        report_kernels_in_report(path_outputfile, unique_kernels, unique_kernel_info, work_total_numbers)
         output.close()
         output_errorprojects.close()
         
