@@ -121,6 +121,7 @@ rawkernels = {
             '5.4-gki-aosp-master-db845c',  # android12-5.4
             '5.4-gki-aosp-master-hikey960', # android12-5.4
             '5.4-aosp-master-x15', # android12-5.4
+            '5.4-gki-android12-android11-db845c', # android12-5.4
             ],
     'android11-5.4-lts':[
             '5.4-lts-gki-android11-android11-hikey960', # android11-5.4-lts
@@ -480,6 +481,13 @@ projectids = {
                     {'project_id': 339,
                      'hardware': 'x15',
                      'OS' : 'AOSP',
+                     'kern' : '5.4',
+                     'branch' : 'Android12-5.4',},
+    '5.4-gki-android12-android11-db845c':
+                    {'slug': '5.4-gki-android12-android11-db845c',
+                     'group':'android-lkft',
+                     'hardware': 'db845',
+                     'OS' : 'Android11',
                      'kern' : '5.4',
                      'branch' : 'Android12-5.4',},
 
