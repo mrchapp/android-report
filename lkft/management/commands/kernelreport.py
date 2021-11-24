@@ -171,6 +171,19 @@ rawkernels = {
             'mainline-gki-aosp-master-hikey',
             'mainline-gki-aosp-master-x15',
             ],
+
+    'android13-5.10-full-cts-vts':[
+            '5.10-gki-android13-aosp-master-db845c-full-cts-vts',
+            '5.10-gki-android13-aosp-master-hikey960-full-cts-vts',
+            ],
+    'EAP-android12-5.10-full-cts-vts':[
+            '5.10-gki-private-android12-db845c-full-cts-vts',
+            '5.10-gki-private-android12-hikey960-full-cts-vts',
+            ],
+    'android11-5.4-full-cts-vts':[
+            '5.4-gki-android11-android11-db845c-full-cts-vts',
+            '5.4-gki-android11-android11-hikey960-full-cts-vts',
+            ],
 }
 
 projectids = {
@@ -538,6 +551,21 @@ projectids = {
                      'OS' : 'AOSP',
                      'kern' : '5.4',
                      'branch' : 'Android11-5.4',},
+    '5.4-gki-android11-android11-db845c-full-cts-vts':
+                    {'slug': '5.4-gki-android11-android11-db845c-full-cts-vts',
+                     'group':'android-lkft',
+                     'hardware': 'db845c',
+                     'OS' : 'Android11',
+                     'kern' : '5.4',
+                     'branch' : 'Android11-5.4',},
+    '5.4-gki-android11-android11-hikey960-full-cts-vts':
+                    {'slug': '5.4-gki-android11-android11-hikey960-full-cts-vts',
+                     'group':'android-lkft',
+                     'hardware': 'hikey960',
+                     'OS' : 'Android11',
+                     'kern' : '5.4',
+                     'branch' : 'Android11-5.4',},
+
     # projects for android12-5.10
     '5.10-gki-aosp-master-hikey960':
                     {'project_id': 607,
@@ -551,6 +579,40 @@ projectids = {
                      'OS' : 'AOSP',
                      'kern' : '5.10',
                      'branch' : 'Android12-5.10',},
+    '5.10-gki-private-android12-db845c':
+                    {'project_id': 617,
+                     'hardware': 'db845',
+                     'OS' : 'Android12',
+                     'kern' : '5.10',
+                     'branch' : 'Android12-5.10',},
+    '5.10-gki-private-android12-db845c-presubmit':
+                    {'slug': '5.10-gki-private-android12-db845c-presubmit',
+                     'group':'android-lkft',
+                     'hardware': 'db845',
+                     'OS' : 'Android12',
+                     'kern' : '5.10',
+                     'branch' : 'Android12-5.10',},
+    '5.10-gki-private-android12-hikey960':
+                    {'project_id': 616,
+                     'hardware': 'HiKey960',
+                     'OS' : 'Android12',
+                     'kern' : '5.10',
+                     'branch' : 'Android12-5.10',},
+    '5.10-gki-private-android12-db845c-full-cts-vts':
+                    {'slug': '5.10-gki-private-android12-db845c-full-cts-vts',
+                     'group':'android-lkft',
+                     'hardware': 'db845c',
+                     'OS' : 'Android12',
+                     'kern' : '5.10',
+                     'branch' : 'Android12-5.10',},
+    '5.10-gki-private-android12-hikey960-full-cts-vts':
+                    {'slug': '5.10-gki-private-android12-hikey960-full-cts-vts',
+                     'group':'android-lkft',
+                     'hardware': 'hikey960',
+                     'OS' : 'Android12',
+                     'kern' : '5.10',
+                     'branch' : 'Android12-5.10',},
+
     # projects for android13-5.10
     '5.10-gki-android13-aosp-master-hikey960':
                     {'project_id': 731,
@@ -571,25 +633,21 @@ projectids = {
                      'OS' : 'AOSP',
                      'kern' : '5.10',
                      'branch' : 'Android13-5.10',},
-    '5.10-gki-private-android12-db845c':
-                    {'project_id': 617,
-                     'hardware': 'db845',
-                     'OS' : 'Android12',
-                     'kern' : '5.10',
-                     'branch' : 'Android12-5.10',},
-    '5.10-gki-private-android12-db845c-presubmit':
-                    {'slug': '5.10-gki-private-android12-db845c-presubmit',
+    '5.10-gki-android13-aosp-master-db845c-full-cts-vts':
+                    {'slug': '5.10-gki-android13-aosp-master-db845c-full-cts-vts',
                      'group':'android-lkft',
-                     'hardware': 'db845',
-                     'OS' : 'Android12',
+                     'hardware': 'db845c',
+                     'OS' : 'Android13',
                      'kern' : '5.10',
-                     'branch' : 'Android12-5.10',},
-    '5.10-gki-private-android12-hikey960':
-                    {'project_id': 616,
-                     'hardware': 'HiKey960',
-                     'OS' : 'Android12',
+                     'branch' : 'Android13-5.10',},
+    '5.10-gki-android13-aosp-master-hikey960-full-cts-vts':
+                    {'slug': '5.10-gki-android13-aosp-master-hikey960-full-cts-vts',
+                     'group':'android-lkft',
+                     'hardware': 'hikey960',
+                     'OS' : 'Android13',
                      'kern' : '5.10',
-                     'branch' : 'Android12-5.10',},
+                     'branch' : 'Android13-5.10',},
+
     # projects for android12-5.10-lts
     '5.10-lts-gki-android12-private-android12-hikey960':
                     {'slug': '5.10-lts-gki-android12-private-android12-hikey960',
@@ -605,6 +663,7 @@ projectids = {
                      'OS' : 'Android12',
                      'kern' : '5.10',
                      'branch' : 'Android12-5.10-lts',},
+
     # projects for android12-5.4
     '5.4-gki-private-android12-db845c':
                     {'project_id': 620,
@@ -625,6 +684,7 @@ projectids = {
                      'OS' : 'Android12',
                      'kern' : '5.4',
                      'branch' : 'Android12-5.4',},
+
     # projects for android12-5.4-lts
     '5.4-lts-gki-android12-private-android12-hikey960':
                     {'slug': '5.4-lts-gki-android12-private-android12-hikey960',
@@ -640,6 +700,7 @@ projectids = {
                      'OS' : 'Android12',
                      'kern' : '5.4',
                      'branch' : 'Android12-5.4-lts',},
+
     # projects for android11-5.4
     '5.4-gki-android11-private-android12-hikey960':
                     {'slug': '5.4-gki-android11-private-android12-hikey960',
@@ -655,6 +716,7 @@ projectids = {
                      'OS' : 'Android12',
                      'kern' : '5.4',
                      'branch' : 'Android11-5.4',},
+
     # projects for android13-5.15
     '5.15-gki-android13-aosp-master-db845c':
                     {'slug': '5.15-gki-android13-aosp-master-db845c',
