@@ -38,8 +38,8 @@ function parseArgs(){
                     echo "Please specify value for the --exact-version-1 option"
                     exit 1
                 fi
-                exact_ver1="${2}"
-                opt_exact_ver1="--exact-version-1 ${2}"
+                exact_ver1=$(echo "${2}"|sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+                opt_exact_ver1="--exact-version-1 ${exact_ver1}"
                 shift 2
                 ;;
             X--exact-version-2)
@@ -47,8 +47,8 @@ function parseArgs(){
                     echo "Please specify value for the --exact-version-2 option"
                     exit 1
                 fi
-                exact_ver2="${2}"
-                opt_exact_ver2="--exact-version-2 ${2}"
+                exact_ver2=$(echo "${2}"|sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+                opt_exact_ver2="--exact-version-2 ${exact_ver2}"
                 shift 2
                 ;;
             X-h|X--help)
@@ -61,7 +61,7 @@ function parseArgs(){
                     printUsage
                     exit 1
                 fi
-                ker_version="${1}"
+                ker_version=$(echo "${1}"|sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
                 shift
                 ;;
 
