@@ -1254,8 +1254,8 @@ def report_kernels_in_report(path_outputfile, unique_kernels, unique_kernel_info
             f_outputfile.write("\n")
 
         f_outputfile.write("\n")
-        f_outputfile.write("    %d Prior Failures now pass\n" % work_total_numbers.number_antiregressions)
-        f_outputfile.write("    %d Regressions of %d Failures, %d Passed, %d Ignored, %d Assumption Failures, %d Total\n" % (
+        f_outputfile.write("%d Prior Failures now pass\n" % work_total_numbers.number_antiregressions)
+        f_outputfile.write("%d Regressions of %d Failures, %d Passed, %d Ignored, %d Assumption Failures, %d Total\n" % (
                                 work_total_numbers.number_regressions,
                                 work_total_numbers.number_failed,
                                 work_total_numbers.number_passed,
