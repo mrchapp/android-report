@@ -1480,6 +1480,7 @@ def list_builds(request):
         boottime_jobs_data = None
 
     else:
+        logger.info('user: %s is going to check benchmark results for project: %s' % (request.user, project_full_name))
         benchmark_jobs_data_dict = get_measurements_of_project(project=project, builds=builds, fetch_latest_from_qa_report=fetch_latest_from_qa_report)
 
         boottime_jobs_data_dict = benchmark_jobs_data_dict.pop('boottime', None)
