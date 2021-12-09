@@ -91,6 +91,7 @@ rawkernels = {
     '4.9':[
             '4.9q-10.0-gsi-hikey960',
             '4.9q-10.0-gsi-hikey',
+            '4.9q-android11-hikey960',
             '4.9p-10.0-gsi-hikey960',
             '4.9p-10.0-gsi-hikey',
             '4.9p-9.0-hikey960',
@@ -104,6 +105,8 @@ rawkernels = {
             '4.14-stable-android11-hikey960-lkft',
             '4.14q-10.0-gsi-hikey960',
             '4.14q-10.0-gsi-hikey',
+            '4.14q-android11-hikey960',
+            '4.14q-master-hikey960',
             '4.14p-10.0-gsi-hikey960',
             '4.14p-10.0-gsi-hikey',
             '4.14p-9.0-hikey960',
@@ -115,7 +118,21 @@ rawkernels = {
             '4.19-stable-android11-hikey960-lkft',
             '4.19q-10.0-gsi-hikey960',
             '4.19q-10.0-gsi-hikey',
+            '4.19q-android11-hikey960',
+            '4.19q-master-hikey960',
             '4.19-stable-aosp-x15',
+            ],
+    'EAP-4.9q':[
+            '4.9q-android12-hikey960',
+            ],
+    'EAP-4.14q':[
+            '4.14q-android12-hikey960',
+            ],
+    'EAP-4.14-stable':[
+            '4.14-stable-android12-hikey960-lkft',
+            ],
+    'EAP-4.19q':[
+            '4.19q-android12-hikey960',
             ],
     'android12-5.4':[
             '5.4-gki-aosp-master-db845c',  # android12-5.4
@@ -366,6 +383,21 @@ projectids = {
                      'OS' : 'Android10',
                      'kern' : '4.9',
                      'branch' : 'Android-4.9-q',},
+    '4.9q-android11-hikey960':
+                    {'slug': '4.9q-android11-hikey960',
+                     'group':'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'Android11',
+                     'kern' : '4.9',
+                     'branch': 'Android-4.9-q',},
+    '4.9q-android12-hikey960':
+                    {'slug': '4.9q-android12-hikey960',
+                     'group':'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'Android12',
+                     'kern' : '4.9',
+                     'branch': 'Android-4.9-q',},
+
     '4.14p-9.0-hikey':
                     {'project_id': 121, 
                      'hardware': 'HiKey',
@@ -404,6 +436,28 @@ projectids = {
                      'OS' : 'Android10',
                      'kern' : '4.14',
                      'branch' : 'Android-4.14-q',},
+    '4.14q-android11-hikey960':
+                    {'slug': '4.14q-android11-hikey960',
+                     'group':'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'Android11',
+                     'kern' : '4.14',
+                     'branch': 'Android-4.14-q',},
+    '4.14q-android12-hikey960':
+                    {'slug': '4.14q-android12-hikey960',
+                     'group':'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'Android12',
+                     'kern' : '4.14',
+                     'branch': 'Android-4.14-q',},
+    '4.14q-master-hikey960':
+                    {'slug': '4.14q-master-hikey960',
+                     'group':'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'AOSP',
+                     'kern' : '4.14',
+                     'branch': 'Android-4.14-q',},
+
     '4.14-stable-aosp-x15':
                     {'project_id': 320,
                      'hardware': 'X15',
@@ -476,6 +530,29 @@ projectids = {
                      'OS' : 'AOSP',
                      'kern' : '4.19',
                      'branch' : 'Android-4.19-stable',},
+
+    '4.19q-android11-hikey960':
+                    {'slug': '4.19q-android11-hikey960',
+                     'group':'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'Android11',
+                     'kern' : '4.19',
+                     'branch': 'Android-4.19-q',},
+    '4.19q-android12-hikey960':
+                    {'slug': '4.19q-android12-hikey960',
+                     'group':'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'Android12',
+                     'kern' : '4.19',
+                     'branch': 'Android-4.19-q',},
+    '4.19q-master-hikey960':
+                    {'slug': '4.19q-master-hikey960',
+                     'group':'android-lkft',
+                     'hardware': 'HiKey960',
+                     'OS' : 'AOSP',
+                     'kern' : '4.19',
+                     'branch': 'Android-4.19-q',},
+
 
     # projects for android12-5.4
     '5.4-gki-aosp-master-hikey960':
