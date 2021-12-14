@@ -1343,8 +1343,8 @@ class Command(BaseCommand):
                 project =  qa_report_api.get_project_with_name(project_fullname)
 
             if project is None:
-                print("\nERROR project for " + combo + " was not found, please check and try again\n")
-                output_errorprojects.write("\nERROR project for " + combo+ " was not found, please check and try again\n\n")
+                print("\nNOTE: project for " + combo + " was not found, please check and try again\n")
+                output_errorprojects.write("\nNOTE: project " + combo+ " was not found, please check and try again\n\n")
                 continue
 
             project_id = project.get('id')
@@ -1355,7 +1355,7 @@ class Command(BaseCommand):
                                           exact_ver1=opt_exact_ver1, exact_ver2=opt_exact_ver2, reverse_build_order=reverse_build_order,
                                           no_check_kernel_version=no_check_kernel_version)
             if len(goodruns) < 2 :
-                print("\nERROR project " + project_name+ " did not have 2 good runs\n")
+                print("\nNOTE: project " + project_name+ " did not have 2 good runs\n")
                 if opt_exact_ver1 is not None:
                     output_errorprojects.write("NOTE: project " + project_name + " did not have results for %s\n" % (opt_exact_ver1))
                 else:
