@@ -124,12 +124,12 @@ rawkernels = {
             '5.4-gki-android12-android11-db845c', # android12-5.4
             ],
     'android11-5.4-lts':[
-            '5.4-lts-gki-android11-android11-hikey960', # android11-5.4-lts
             '5.4-lts-gki-android11-android11-db845c', # android11-5.4-lts
+            '5.4-lts-gki-android11-android11-hikey960', # android11-5.4-lts
             ],
     'android11-5.4':[
-            '5.4-gki-android11-android11-hikey960', # android11-5.4
             '5.4-gki-android11-android11-db845c', # android11-5.4
+            '5.4-gki-android11-android11-hikey960', # android11-5.4
             '5.4-gki-android11-aosp-master-db845c', # android11-5.4
             '5.4-gki-android11-aosp-master-hikey960', # android11-5.4
             ],
@@ -146,8 +146,8 @@ rawkernels = {
             ],
 
     'EAP-android12-5.10-lts':[
-            '5.10-lts-gki-android12-private-android12-hikey960',
             '5.10-lts-gki-android12-private-android12-db845c',
+            '5.10-lts-gki-android12-private-android12-hikey960',
             ],
     'EAP-android12-5.10':[
             '5.10-gki-private-android12-db845c',
