@@ -1634,6 +1634,14 @@ def get_cts_vts_version_from(cts_vts_url, default_cts_vts_version=""):
     if cts_vts_url is None or len(cts_vts_url) == 0:
         return cts_vts_url
 
+    if type(cts_vts_url) is list:
+        index = 0
+        vers = []
+        for url in cts_vts_url:
+            vers.append(get_cts_vts_version_from(url, default_cts_vts_version=default_cts_vts_version[index]))
+        return vers
+
+    # for cases that type(cts_vts_url) is str:
     if cts_vts_url.find('/aosp-master-throttled/') >= 0 or \
             cts_vts_url.find('/aosp-master/') >= 0:
         # http://testdata.linaro.org/lkft/aosp-stable/aosp-master-throttled/7384311/test_suites_arm64/android-cts.zip
