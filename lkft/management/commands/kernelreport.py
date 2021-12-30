@@ -1094,7 +1094,7 @@ def find_best_two_runs(builds, project_name, project, exact_ver1="", exact_ver2=
 
         # when the finished successfully jobs number is the same as the number of all jobs
         # it means all the jobs are finished successfully, the build is OK to be used for comparisonfin
-        if len(jobs) == total_jobs_finished_number:
+        if len(jobs) == total_jobs_finished_number and build['numbers'].modules_total > 0:
             #pdb.set_trace()
 
             if nextVersionDict is not None:
@@ -1248,11 +1248,12 @@ def print_androidresultheader(output, project_info, run, priorrun):
         else:
             output.write("Current:" + get_last_of_metadata(build_metadata.get('vendor_fingerprint')) + " != Prior:" + get_last_of_metadata(prior_build_metadata.get('vendor_fingerprint', 'UNKNOWN')) + "\n")
 
-    output.write("    " + "CTS Version:" + " - " )
-    if get_last_of_metadata(build_metadata.get('cts_version', 'UNKNOWN')) == get_last_of_metadata(prior_build_metadata.get('cts_version', 'UNKNOWN')):
-        output.write("Current:" + get_last_of_metadata(build_metadata.get('cts_version', 'UNKNOWN')) + " == Prior:" + get_last_of_metadata(prior_build_metadata.get('cts_version', 'UNKNOWN')) + "\n")
-    else:
-        output.write("Current:" + get_last_of_metadata(build_metadata.get('cts_version', 'UNKNOWN')) + " != Prior:" + get_last_of_metadata(prior_build_metadata.get('cts_version', 'UNKNOWN')) + "\n")
+    if build_metadata.get('cts_version', None):
+        output.write("    " + "CTS Version:" + " - " )
+        if get_last_of_metadata(build_metadata.get('cts_version', 'UNKNOWN')) == get_last_of_metadata(prior_build_metadata.get('cts_version', 'UNKNOWN')):
+            output.write("Current:" + get_last_of_metadata(build_metadata.get('cts_version', 'UNKNOWN')) + " == Prior:" + get_last_of_metadata(prior_build_metadata.get('cts_version', 'UNKNOWN')) + "\n")
+        else:
+            output.write("Current:" + get_last_of_metadata(build_metadata.get('cts_version', 'UNKNOWN')) + " != Prior:" + get_last_of_metadata(prior_build_metadata.get('cts_version', 'UNKNOWN')) + "\n")
 
     # there is the case like presubmit jobs that there are not vts is run
     if build_metadata.get('vts_version', None):
@@ -1282,6 +1283,9 @@ def report_results(output, run, regressions, combo, priorrun, flakes, antiregres
     output.write(project_info['branch'] + "\n")
     print_androidresultheader(output, project_info, run, priorrun)
     #pdb.set_trace()
+    if numbers.modules_total == 0:
+        logger.info("Skip printing the regressions information as this build might not have any cts vts jobs run")
+        return
     output.write("    " + str(len(antiregressions)) + " Prior Failures now pass\n")
     output.write("    " + str(len(regressions)) + " Regressions of ")
     output.write(str(numbers.number_failed) + " Failures, ")
