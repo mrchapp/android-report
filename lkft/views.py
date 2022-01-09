@@ -3002,7 +3002,12 @@ def gitlab_projects(request):
             'path_with_namespace':'Linaro/lkft/users/daniel.diaz/android-reporter',
             'web_url': 'https://gitlab.com/Linaro/lkft/users/daniel.diaz/android-reporter'
         },
-        # {
+        {
+             'project_id':'32439210',
+             'path_with_namespace':'Linaro/lkft/users/yongqin.liu/lkft-android-build-private',
+             'web_url': 'https://gitlab.com/Linaro/lkft/users/yongqin.liu/lkft-android-build-private'
+        },
+        #{
         #     'project_id':'28784629',
         #     'path_with_namespace':'Linaro/lkft/users/yongqin.liu/lkft-common',
         #     'web_url': 'https://gitlab.com/Linaro/lkft/users/yongqin.liu/lkft-common'
@@ -3041,14 +3046,26 @@ def gitlab_project_pipelines(request, project_id):
                 logger.warn(unexpect)
 
             pipeline['branch'] = variables_dict.get('KERNEL_BRANCH', 'Unknown')
-            pipeline['build_version'] = variables_dict.get('KERNEL_SPECIFIC', 'Unknown')
+            target_report_job_name = None
+            if variables_dict.get('KERNEL_SPECIFIC') is not None:
+                # for Linaro/lkft/users/daniel.diaz/android-reporter
+                kernel_describe = variables_dict.get('KERNEL_SPECIFIC')
+                target_report_job_name = 'report'
+            elif variables_dict.get('KERNEL_DESCRIBE') is not None:
+                # for Linaro/lkft/users/yongqin.liu/lkft-android-build-private
+                kernel_describe = variables_dict.get('KERNEL_DESCRIBE')
+                target_report_job_name = 'report-for-android'
+            else:
+                kernel_describe = "Unknown"
 
-            jobs = gitlab_api.get_pipeline_jobs(project_id, pipeline.get('id'))
+            pipeline['kernel_describe'] = kernel_describe
 
-            for job in jobs:
-                if job.get('name') == 'report':
-                    pipeline['artifacts_url'] = gitlab_api.get_job_artifacts_url(project_id, job.get('id'))
-                    break
+            if target_report_job_name is not None:
+                jobs = gitlab_api.get_pipeline_jobs(project_id, pipeline.get('id'))
+                for job in jobs:
+                    if job.get('name').startswith(target_report_job_name):
+                        pipeline['artifacts_url'] = gitlab_api.get_job_artifacts_url(project_id, job.get('id'))
+                        break
 
         response_data = {
             'pipelines': pipelines,
