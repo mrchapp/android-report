@@ -54,36 +54,6 @@ rawkernels = {
             '5.10-gki-private-android12-db845c-presubmit',
             ],
 
-    ## For gitlab pipeline tuxsuite builds
-    'android-4.4-p-hikey': [
-            '4.4p-9.0-hikey-tuxsuite',
-            '4.4p-10.0-gsi-hikey-tuxsuite',
-            ],
-    'android-4.9-p-hikey': [
-            "4.9p-9.0-hikey-tuxsuite",
-            "4.9p-10.0-gsi-hikey-tuxsuite",
-            "4.9p-9.0-hikey960-tuxsuite",
-            "4.9p-10.0-gsi-hikey960-tuxsuite",
-            ],
-    'android-4.9-q-hikey': [
-            "4.9q-10.0-gsi-hikey-tuxsuite",
-            "4.9q-10.0-gsi-hikey960-tuxsuite",
-            ],
-    'android-4.14-p-hikey': [
-            '4.14p-10.0-gsi-hikey960-tuxsuite',
-            '4.14p-9.0-hikey960-tuxsuite',
-            '4.14p-10.0-gsi-hikey-tuxsuite',
-            '4.14p-9.0-hikey-tuxsuite',
-            ],
-    'android-4.14-q-hikey': [
-            "4.14q-10.0-gsi-hikey-tuxsuite",
-            "4.14q-10.0-gsi-hikey960-tuxsuite",
-            ],
-    'android-4.19-q-hikey': [
-            '4.19q-10.0-gsi-hikey-tuxsuite',
-            '4.19q-10.0-gsi-hikey960-tuxsuite',
-            ],
-    ########## for normal jenkins ci builds ##########
     '4.4':[
             '4.4p-10.0-gsi-hikey',
             '4.4p-9.0-hikey',
@@ -120,6 +90,42 @@ rawkernels = {
             '4.19q-10.0-gsi-hikey',
             '4.19q-android11-hikey960',
             '4.19q-master-hikey960',
+            '4.19-stable-aosp-x15',
+            ],
+
+    'android-4.9-q-hikey':[
+            '4.9q-10.0-gsi-hikey960',
+            '4.9q-10.0-gsi-hikey',
+            '4.9q-android11-hikey960',
+            ],
+    'android-4.14-q-hikey': [
+            '4.14q-10.0-gsi-hikey960',
+            '4.14q-10.0-gsi-hikey',
+            '4.14q-android11-hikey960',
+            '4.14q-master-hikey960'
+            ],
+    'android-hikey-linaro-4.14-stable-lkft': [
+            '4.14-stable-master-hikey960-lkft',
+            '4.14-stable-master-hikey-lkft',
+            '4.14-stable-android12-hikey960-lkft',
+            '4.14-stable-android11-hikey960-lkft',
+            ],
+    'android-beagle-x15-4.14-stable-lkft': [
+            '4.14-stable-aosp-x15',
+            ],
+    'android-4.19-q-hikey':[
+            '4.19q-10.0-gsi-hikey960',
+            '4.19q-10.0-gsi-hikey',
+            '4.19q-android11-hikey960',
+            '4.19q-master-hikey960',
+            ],
+    'android-hikey-linaro-4.19-stable-lkft': [
+            '4.19-stable-master-hikey960-lkft',
+            '4.19-stable-master-hikey-lkft',
+            '4.19-stable-android11-hikey960-lkft',
+            '4.19-stable-aosp-x15',
+            ],
+    'android-beagle-x15-4.19-stable-lkft': [
             '4.19-stable-aosp-x15',
             ],
     'EAP-4.9q':[
@@ -204,133 +210,6 @@ rawkernels = {
 }
 
 projectids = {
-    # for gitlab pipeline tuxsuite builds ###########
-
-    ## for 4.4p
-    '4.4p-9.0-hikey-tuxsuite': {
-                                'slug': '4.4p-9.0-hikey',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
-                                'OS' : 'LCR-Android9',
-                                'baseOS' : 'Android9',
-                                'kern' : '4.4',
-                                'branch' : 'Android-4.4-p',},
-    '4.4p-10.0-gsi-hikey-tuxsuite': {
-                                'slug': '4.4p-10.0-gsi-hikey',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
-                                'OS' : 'Android10',
-                                'kern' : '4.4',
-                                'branch' : 'Android-4.4-p',},
-
-    ## for 4.9p
-    "4.9p-9.0-hikey-tuxsuite": {
-                                'slug': '4.9p-9.0-hikey',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
-                                'OS' : 'Android10',
-                                'kern' : '4.9',
-                                'branch' : 'Android-4.9-p',},
-    "4.9p-10.0-gsi-hikey-tuxsuite": {
-                                'slug': '4.9p-10.0-gsi-hikey',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
-                                'OS' : 'Android10',
-                                'kern' : '4.9',
-                                'branch' : 'Android-4.9-p',},
-    "4.9p-9.0-hikey960-tuxsuite": {
-                                'slug': '4.9p-9.0-hikey960',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey960',
-                                'OS' : 'Android10',
-                                'kern' : '4.9',
-                                'branch' : 'Android-4.9-p',},
-    "4.9p-10.0-gsi-hikey960-tuxsuite": {
-                                'slug': '4.9p-10.0-gsi-hikey960',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey960',
-                                'OS' : 'Android10',
-                                'kern' : '4.9',
-                                'branch' : 'Android-4.9-p',},
-
-    ## for 4.9q
-    '4.9q-10.0-gsi-hikey-tuxsuite': {
-                                'slug': '4.9q-10.0-gsi-hikey',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
-                                'OS' : 'Android10',
-                                'kern' : '4.9',
-                                'branch' : 'Android-4.9-q',},
-    '4.9q-10.0-gsi-hikey960-tuxsuite': {
-                                'slug': '4.9q-10.0-gsi-hikey',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey960',
-                                'OS' : 'Android10',
-                                'kern' : '4.9',
-                                'branch' : 'Android-4.9-q',},
-
-    ## for 4.14p
-    '4.14p-9.0-hikey-tuxsuite': {
-                                'slug': '4.14p-9.0-hikey',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
-                                'OS' : 'Android10',
-                                'kern' : '4.14',
-                                'branch' : 'Android-4.14-p',},
-    '4.14p-10.0-gsi-hikey-tuxsuite': {
-                                'slug': '4.14p-10.0-gsi-hikey',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
-                                'OS' : 'Android10',
-                                'kern' : '4.14',
-                                'branch' : 'Android-4.14-p',},
-    '4.14p-9.0-hikey960-tuxsuite': {
-                                'slug': '4.14p-9.0-hikey960',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey960',
-                                'OS' : 'Android10',
-                                'kern' : '4.14',
-                                'branch' : 'Android-4.14-p',},
-    '4.14p-10.0-gsi-hikey960-tuxsuite': {
-                                'slug': '4.14p-10.0-gsi-hikey960',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey960',
-                                'OS' : 'Android10',
-                                'kern' : '4.14',
-                                'branch' : 'Android-4.14-p',},
-
-    ## for 4.14q
-    '4.14q-10.0-gsi-hikey-tuxsuite': {
-                                'slug': '4.14q-10.0-gsi-hikey',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
-                                'OS' : 'Android10',
-                                'kern' : '4.14',
-                                'branch' : 'Android-4.14-q',},
-    '4.14q-10.0-gsi-hikey960-tuxsuite': {
-                                'slug': '4.14q-10.0-gsi-hikey960',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey960',
-                                'OS' : 'Android10',
-                                'kern' : '4.14',
-                                'branch' : 'Android-4.14-q',},
-
-    ## for 4.19q
-    '4.19q-10.0-gsi-hikey-tuxsuite': {
-                                'slug': '4.19q-10.0-gsi-hikey',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey',
-                                'OS' : 'Android10',
-                                'kern' : '4.19',
-                                'branch' : 'Android-4.19-q',},
-    '4.19q-10.0-gsi-hikey960-tuxsuite': {
-                                'slug': '4.19q-10.0-gsi-hikey960',
-                                'group':'~yongqin.liu',
-                                'hardware': 'HiKey960',
-                                'OS' : 'Android10',
-                                'kern' : '4.19',
-                                'branch' : 'Android-4.19-q',},
-
     ########## for jenkins ci builds ###################
     '4.4p-9.0-hikey':
                     {'project_id': 123, 
