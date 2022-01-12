@@ -3003,6 +3003,11 @@ def gitlab_projects(request):
             'web_url': 'https://gitlab.com/Linaro/lkft/users/daniel.diaz/android-reporter'
         },
         {
+             'project_id':'32703900',
+             'path_with_namespace':'Linaro/lkft/users/yongqin.liu/lkft-android-build',
+             'web_url': 'https://gitlab.com/Linaro/lkft/users/yongqin.liu/lkft-android-build'
+        },
+        {
              'project_id':'32439210',
              'path_with_namespace':'Linaro/lkft/users/yongqin.liu/lkft-android-build-private',
              'web_url': 'https://gitlab.com/Linaro/lkft/users/yongqin.liu/lkft-android-build-private'
