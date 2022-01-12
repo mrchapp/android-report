@@ -173,6 +173,8 @@ class JenkinsApi(RESTFullApi):
         return self.call_with_full_url(request_url=full_api_url)
 
     def get_build_details_with_full_url(self, build_url):
+        if build_url.find(self.domain) < 0:
+            raise UrlNotFoundException(None, url=build_url)
         full_api_url = '%s/api/json/' % build_url
         return self.call_with_full_url(request_url=full_api_url)
 
